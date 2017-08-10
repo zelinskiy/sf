@@ -132,7 +132,7 @@ Example test_next_weekday:
     later.  Having made the assertion, we can also ask Coq to verify
     it, like this: *)
 
-Proof. simpl. reflexivity.  Qed.
+Proof. simpl. reflexivity.  Qed. 
 
 (** The details are not important for now (we'll come back to
     them in a bit), but essentially this can be read as "The assertion
@@ -254,17 +254,21 @@ Proof. simpl. reflexivity. Qed.
     should return [true] if either or both of its inputs are
     [false]. *)
 
-Definition nandb (b1:bool) (b2:bool) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition nandb (b1:bool) (b2:bool) : bool :=
+  match b1, b2 with
+  | true, true => false
+  | _, _ => true
+  end.                 
+  
 
 Example test_nandb1:               (nandb true false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb2:               (nandb false false) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb3:               (nandb false true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_nandb4:               (nandb true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (andb3)  *)
@@ -272,17 +276,20 @@ Example test_nandb4:               (nandb true true) = false.
     return [true] when all of its inputs are [true], and [false]
     otherwise. *)
 
-Definition andb3 (b1:bool) (b2:bool) (b3:bool) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition andb3 (b1:bool) (b2:bool) (b3:bool) : bool :=
+  match b1, b2, b3 with
+  | true, true, true => true
+  | _, _, _ => false
+  end.
 
 Example test_andb31:                 (andb3 true true true) = true.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb32:                 (andb3 false true true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb33:                 (andb3 true false true) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 Example test_andb34:                 (andb3 true true false) = false.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity.  Qed.
 (** [] *)
 
 (* ================================================================= *)
@@ -546,13 +553,16 @@ Fixpoint exp (base power : nat) : nat :=
 
     Translate this into Coq. *)
 
-Fixpoint factorial (n:nat) : nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint factorial (n:nat) : nat :=
+  match n with
+  | O => S O
+  | S n' => mult n (factorial n')
+  end.
 
 Example test_factorial1:          (factorial 3) = 6.
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 Example test_factorial2:          (factorial 5) = (mult 10 12).
-(* FILL IN HERE *) Admitted.
+Proof. simpl. reflexivity. Qed.
 (** [] *)
 
 (** We can make numerical expressions a little easier to read and
@@ -626,15 +636,14 @@ Proof. simpl. reflexivity.  Qed.
     yielding a [b]oolean.  Instead of making up a new [Fixpoint] for
     this one, define it in terms of a previously defined function. *)
 
-Definition blt_nat (n m : nat) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition blt_nat (n m : nat) : bool := leb n m && negb (beq_nat m n).
 
 Example test_blt_nat1:             (blt_nat 2 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. unfold blt_nat. simpl. reflexivity. Qed.
 Example test_blt_nat2:             (blt_nat 2 4) = true.
-(* FILL IN HERE *) Admitted.
+Proof. unfold blt_nat. simpl. reflexivity. Qed.
 Example test_blt_nat3:             (blt_nat 4 2) = false.
-(* FILL IN HERE *) Admitted.
+Proof. unfold blt_nat. simpl. reflexivity. Qed.
 (** [] *)
 
 (* ################################################################# *)
@@ -804,39 +813,11 @@ Proof.
 Theorem plus_id_exercise : forall n m o : nat,
   n = m -> m = o -> n + m = m + o.
 Proof.
-  (* FILL IN HERE *) Admitted.
-(** [] *)
-
-(** The [Admitted] command tells Coq that we want to skip trying
-    to prove this theorem and just accept it as a given.  This can be
-    useful for developing longer proofs, since we can state subsidiary
-    lemmas that we believe will be useful for making some larger
-    argument, use [Admitted] to accept them on faith for the moment,
-    and continue working on the main argument until we are sure it
-    makes sense; then we can go back and fill in the proofs we
-    skipped.  Be careful, though: every time you say [Admitted] you
-    are leaving a door open for total nonsense to enter Coq's nice,
-    rigorous, formally checked world! *)
-
-(** We can also use the [rewrite] tactic with a previously proved
-    theorem instead of a hypothesis from the context. If the statement
-    of the previously proved theorem involves quantified variables,
-    as in the example below, Coq tries to instantiate them
-    by matching with the current goal. *)
-
-Theorem mult_0_plus : forall n m : nat,
-  (0 + n) * m = n * m.
-Proof.
-  intros n m.
-  rewrite -> plus_O_n.
-  reflexivity.  Qed.
-
-(** **** Exercise: 2 stars (mult_S_1)  *)
-Theorem mult_S_1 : forall n m : nat,
-  m = S n ->
-  m * (1 + n) = m * m.
-Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
 
 (* (N.b. This proof can actually be completed without using [rewrite],
    but please do use [rewrite] for the sake of the exercise.) *)
@@ -1047,14 +1028,22 @@ Qed.
 Theorem andb_true_elim2 : forall b c : bool,
   andb b c = true -> c = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [] [].
+  - reflexivity.
+  - simpl. intro. rewrite H. reflexivity.
+  - intros. reflexivity.
+  - simpl. intro. rewrite H. reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 1 star (zero_nbeq_plus_1)  *)
 Theorem zero_nbeq_plus_1 : forall n : nat,
   beq_nat 0 (n + 1) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [|n'].
+  - simpl. reflexivity.
+  - simpl. reflexivity.
+Qed.
 (** [] *)
 
 (* ================================================================= *)
