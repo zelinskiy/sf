@@ -1243,9 +1243,6 @@ Qed.
         first converting it to unary and then incrementing. *)
 
 Inductive bin : Type := | Z : bin | T : bin -> bin | ST : bin -> bin.
-Axiom twiceZero : forall b, T b = Z.
-
-Definition nat_to_TF := fun n => match n with | 0 => False | _ => True end.
 
 Fixpoint incr (n : bin) :=
   match n with
@@ -1307,64 +1304,45 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma twice_lemma_weak : forall b, nat_to_bin (b + b) = T (nat_to_bin b).
+Lemma twice_lemma : forall b, (bin_to_nat b + bin_to_nat b) = bin_to_nat (T (nat_to_bin (bin_to_nat b))).
 Proof.
   intros.
   induction b.
-  simpl.
-  rewrite twiceZero.
-  reflexivity.
-  rewrite suc_lemma.
-  simpl.
-  rewrite IHb.
-  simpl.
-  reflexivity.
+  - simpl. reflexivity.
+  - simpl.
+    rewrite <- plus_n_O.
+    rewrite IHb.
+    rewrite <- plus_n_O.
+    rewrite <- IHb.
+    rewrite conv_sound1.
+    rewrite -> IHb.
+    simpl.
+    rewrite <- plus_n_O.
+    rewrite conv_sound1.
+    reflexivity.
+  - simpl.
+    rewrite <- plus_n_O.
+    simpl.
+    rewrite incr_lemma.
+    rewrite conv_sound1.
+    rewrite <- plus_n_O.
+    rewrite -> suc_lemma.
+    simpl.
+    rewrite suc_lemma.
+    reflexivity.
 Qed.
 
-Lemma twice_lemma : forall b, nat_to_bin (bin_to_nat b + bin_to_nat b) = T b.
-Proof.
-  intros.
-  induction b.
-  simpl.
-  pose (twiceZero Z) as H.
-  symmetry in H.
-  exact H.
-  simpl.
-  rewrite <- (plus_n_O (bin_to_nat b)).
-  rewrite <- IHb.
-  rewrite twice_lemma_weak.
-  reflexivity.
-  rewrite twice_lemma_weak.
-  apply f_equal with (f := T).
-  simpl.
-  rewrite twice_lemma_weak  in IHb.
-  rewrite <- (plus_n_O (bin_to_nat b)).
-  rewrite twice_lemma_weak.
-  rewrite IHb.
-  simpl.
-  reflexivity.
-Qed.
-
- 
-
-
+(*
 Theorem conv_sound2 : forall b,  nat_to_bin (bin_to_nat b) = b.
-Proof.
-  intros.
-  induction b.
-  auto.
-  simpl.
-  rewrite <- (plus_n_O (bin_to_nat b)).
-  rewrite twice_lemma.
-  reflexivity.
-  simpl.
-  rewrite <- (plus_n_O (bin_to_nat b)).
-  rewrite twice_lemma.
-  simpl.
-  reflexivity.
-Qed.
+(* Idea: 
+nat_to_bin (bin_to_nat b) = b.
+bin_to_nat (nat_to_bin (bin_to_nat b)) = bin_to_nat b.
+bin_to_nat b = bin_to_nat b.
+QED. *)
 
-  
+Proof.
+
+*)  
     
 
   
