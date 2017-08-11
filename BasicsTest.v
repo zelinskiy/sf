@@ -1,4 +1,4 @@
-Require Import Basics.
+(*Require Import Basics.*)
 Parameter MISSING: Type.
 
 Module Check.
@@ -22,6 +22,8 @@ Import Check.
 Goal True.
 idtac "Entering exercise nandb (standard): 1 point".
 idtac " ".
+
+Print Basics.
 
 idtac "#> nandb".
 check_type @nandb (forall (b1 : bool) (b2 : bool), bool).

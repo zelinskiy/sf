@@ -819,6 +819,14 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem mult_S_1 : forall n m : nat,
+    m = S n -> m *(1 + n) = m * m.
+Proof.
+  intros.
+  simpl.
+  rewrite H.
+  reflexivity.
+Qed.
 (* (N.b. This proof can actually be completed without using [rewrite],
    but please do use [rewrite] for the sake of the exercise.) *)
 (** [] *)
@@ -1124,7 +1132,14 @@ Fixpoint plus' (n : nat) (m : nat) : nat :=
     _does_ terminate on all inputs, but that Coq will reject because
     of this restriction. *)
 
-(* FILL IN HERE *)
+(*
+Fixpoint ack (m n : nat) :=
+  match m, n with
+  | O, _ => S n
+  | S m', O => ack m' (S O)
+  | S m', S n' => ack m' (ack m n')
+  end.
+*)
 (** [] *)
 
 (* ################################################################# *)
@@ -1139,13 +1154,28 @@ Theorem identity_fn_applied_twice :
   (forall (x : bool), f x = x) ->
   forall (b : bool), f (f b) = b.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite H.
+  rewrite H.
+  reflexivity.
+Qed.
 
 (** Now state and prove a theorem [negation_fn_applied_twice] similar
     to the previous one but where the second hypothesis says that the
     function [f] has the property that [f x = negb x].*)
 
-(* FILL IN HERE *)
+Theorem negation_fn_applied_twice :
+  forall (f : bool -> bool),
+  (forall (x : bool), f x = negb x) ->
+  forall (b : bool), f (f b) = b.
+Proof.
+  intros.
+  rewrite H.
+  rewrite H.
+  rewrite negb_involutive.
+  reflexivity.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars (andb_eq_orb)  *)
@@ -1158,7 +1188,20 @@ Theorem andb_eq_orb :
   (andb b c = orb b c) ->
   b = c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro b.
+  destruct b.
+  - simpl.
+    intro c.
+    destruct c.
+    + intro. reflexivity.
+    + intro. rewrite H. reflexivity.
+  - intro c.
+    simpl.
+    intro.
+    rewrite H.
+    reflexivity.
+Qed.
+   
 (** [] *)
 
 (** **** Exercise: 3 starsM (binary)  *)
@@ -1199,7 +1242,110 @@ Proof.
         then converting it to unary should yield the same result as
         first converting it to unary and then incrementing. *)
 
-(* FILL IN HERE *)
+Inductive bin : Type := | Z : bin | T : bin -> bin | ST : bin -> bin.
+
+Fixpoint incr (n : bin) :=
+  match n with
+  | Z => ST Z
+  | T n => ST n
+  | ST n => T (incr n)
+  end.
+
+Fixpoint bin_to_nat (b : bin) :=
+  match b with
+  | Z => O
+  | T n => 2 * (bin_to_nat n)
+  | ST n => S (2 * (bin_to_nat n))
+  end.
+
+Fixpoint nat_to_bin (m : nat) :=
+  match m with
+  | O => Z
+  | S n => incr (nat_to_bin n)
+  end.
+
+Lemma suc_lemma : forall a b,  a + S b = S (a + b).
+Proof.
+  intros.
+  induction a.
+  - simpl. reflexivity.
+  - simpl. rewrite IHa. reflexivity.
+Qed.
+
+Theorem plus_comm : forall a b,  a + b = b + a.
+Proof.
+  induction b.
+  - simpl. rewrite  plus_n_O. reflexivity.
+  - simpl. rewrite suc_lemma. rewrite IHb. reflexivity.
+Qed.
+
+Lemma incr_lemma : forall n, bin_to_nat (incr n) = S (bin_to_nat n).
+Proof.
+  induction n.
+  - simpl. reflexivity.
+  - simpl. reflexivity.
+  - simpl.
+    rewrite IHn.
+    rewrite <- plus_n_O.
+    simpl.
+    rewrite <- plus_n_O.
+    rewrite suc_lemma.
+    reflexivity.
+Qed.
+    
+
+Theorem conv_sound1 : forall (n : nat),  bin_to_nat (nat_to_bin n) = n.
+Proof.
+  induction n.
+  - simpl. reflexivity.
+  - simpl.
+    rewrite incr_lemma.
+    rewrite IHn.
+    reflexivity.
+Qed.
+
+Lemma twice_lemma : forall b, (bin_to_nat b + bin_to_nat b) = bin_to_nat (T (nat_to_bin (bin_to_nat b))).
+Proof.
+  intros.
+  induction b.
+  - simpl. reflexivity.
+  - simpl.
+    rewrite <- plus_n_O.
+    rewrite IHb.
+    rewrite <- plus_n_O.
+    rewrite <- IHb.
+    rewrite conv_sound1.
+    rewrite -> IHb.
+    simpl.
+    rewrite <- plus_n_O.
+    rewrite conv_sound1.
+    reflexivity.
+  - simpl.
+    rewrite <- plus_n_O.
+    simpl.
+    rewrite incr_lemma.
+    rewrite conv_sound1.
+    rewrite <- plus_n_O.
+    rewrite -> suc_lemma.
+    simpl.
+    rewrite suc_lemma.
+    reflexivity.
+Qed.
+
+(*
+Theorem conv_sound2 : forall b,  nat_to_bin (bin_to_nat b) = b.
+(* Idea: 
+nat_to_bin (bin_to_nat b) = b.
+bin_to_nat (nat_to_bin (bin_to_nat b)) = bin_to_nat b.
+bin_to_nat b = bin_to_nat b.
+QED. *)
+
+Proof.
+
+*)  
+    
+
+  
 (** [] *)
 
 (** $Date: 2016-11-22 16:39:52 -0500 (Tue, 22 Nov 2016) $ *)
