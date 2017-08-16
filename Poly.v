@@ -521,7 +521,7 @@ Fixpoint split {X Y : Type} (l : list (X*Y))
   : (list X) * (list Y) :=
   match l with
   | [] => ([],[])
-  | (x,y) :: xs => let xs' := split xs in (x :: fst xs', y :: snd xs')
+  | x :: xs => let xs' := split xs in (fst x :: fst xs', snd x :: snd xs')
   end.
 
 
