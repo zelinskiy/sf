@@ -151,7 +151,16 @@ Qed.
 Example and_exercise :
   forall n m : nat, n + m = 0 -> n = 0 /\ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  induction n.
+  reflexivity.
+  inversion H.
+  induction n.
+  exact H.
+  inversion H.
+Qed.
+
 (** [] *)
 
 (** So much for proving conjunctive statements.  To go in the other
@@ -225,7 +234,11 @@ Proof.
 Lemma proj2 : forall P Q : Prop,
   P /\ Q -> Q.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+  exact H1.
+Qed.
+
 (** [] *)
 
 (** Finally, we sometimes need to rearrange the order of conjunctions
@@ -252,7 +265,13 @@ Theorem and_assoc : forall P Q R : Prop,
   P /\ (Q /\ R) -> (P /\ Q) /\ R.
 Proof.
   intros P Q R [HP [HQ HR]].
-  (* FILL IN HERE *) Admitted.
+  split.
+  split.
+  exact HP.
+  exact HQ.
+  exact HR.
+Qed.
+
 (** [] *)
 
 (** By the way, the infix notation [/\] is actually just syntactic
@@ -315,14 +334,27 @@ Qed.
 Lemma mult_eq_0 :
   forall n m, n * m = 0 -> n = 0 \/ m = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct n.
+  - left. reflexivity.
+  - right.
+    destruct m.
+    * reflexivity.
+    * inversion H.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 1 star (or_commut)  *)
 Theorem or_commut : forall P Q : Prop,
   P \/ Q  -> Q \/ P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct H.
+  - exact (or_intror H).
+  - exact (or_introl H).
+Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -377,7 +409,10 @@ Proof.
 Fact not_implies_our_not : forall (P:Prop),
   ~ P -> (forall (Q:Prop), P -> Q).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  exact (ex_falso_quodlibet Q (H H0)).
+Qed.
+    
 (** [] *)
 
 (** This is how we use [not] to state that [0] and [1] are different
@@ -429,21 +464,42 @@ Proof.
 
    _Theorem_: [P] implies [~~P], for any proposition [P]. *)
 
-(* FILL IN HERE *)
+(* 
+|- P -> ~~P
+(Imp intro)
+P |- ~~ P
+(Imp intro)
+P, P |- False -> False
+(Imp intro)
+P, P, False |- False
+(Axiom)
+ *)
 (** [] *)
 
 (** **** Exercise: 2 stars, recommended (contrapositive)  *)
 Theorem contrapositive : forall (P Q : Prop),
   (P -> Q) -> (~Q -> ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  intro.
+  apply H in H1.
+  apply H0 in H1.
+  apply H1.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star (not_both_true_and_false)  *)
 Theorem not_both_true_and_false : forall P : Prop,
   ~ (P /\ ~P).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  intro.
+  inversion H.
+  apply H1 in H0.
+  apply H0.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 1 star, advancedM (informal_not_PNP)  *)
@@ -549,19 +605,68 @@ Qed.
 Theorem iff_refl : forall P : Prop,
   P <-> P.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - intro.
+    exact H.
+  - intro.
+    exact H.
+Qed.
+
 
 Theorem iff_trans : forall P Q R : Prop,
   (P <-> Q) -> (Q <-> R) -> (P <-> R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - apply proj1 in H.
+    apply proj1 in H0.
+    intro.
+    apply H in H1.
+    apply H0 in H1.
+    exact H1.
+  - apply proj2 in H.
+    apply proj2 in H0.
+    intro.
+    apply H0 in H1.
+    apply H in H1.
+    exact H1.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (or_distributes_over_and)  *)
 Theorem or_distributes_over_and : forall P Q R : Prop,
   P \/ (Q /\ R) <-> (P \/ Q) /\ (P \/ R).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  intro.
+  split.
+  destruct H.
+  left.
+  exact H.
+  right.
+  exact (Logic.proj1 H).
+  destruct H.
+  left.
+  exact H.
+  right.
+  exact (Logic.proj2 H).
+  intro.
+  destruct H.
+  destruct H.
+  left.
+  exact H.
+  destruct H0.
+  left.
+  exact H0.
+  right.
+  split.
+  exact H.
+  exact H0.
+Qed.      
+    
 (** [] *)
 
 (** Some of Coq's tactics treat [iff] statements specially, avoiding
@@ -661,7 +766,15 @@ Proof.
 Theorem dist_not_exists : forall (X:Type) (P : X -> Prop),
   (forall x, P x) -> ~ (exists x, ~ P x).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  intro.
+  destruct H0.
+  absurd (P x).
+  - exact H0.
+  - exact (H x).
+Qed.
+
+
 (** [] *)
 
 (** **** Exercise: 2 stars (dist_exists_or)  *)
@@ -671,7 +784,30 @@ Proof.
 Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
   (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
 Proof.
-   (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - intro.
+    destruct H.
+    destruct H.
+    * left.
+      exists x.
+      exact H.
+    * right.
+      exists x.
+      exact H.
+  - intro.
+    destruct H.
+    destruct H.
+    exists x.
+    left.
+    exact H.
+    destruct H.
+    exists x.
+    right.
+    exact H.
+Qed.
+
+      
 (** [] *)
 
 (* ################################################################# *)
@@ -756,14 +892,98 @@ Lemma In_map_iff :
     In y (map f l) <->
     exists x, f x = y /\ In x l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l.
+  - simpl.
+    intros.
+    split.
+    * exact (ex_falso_quodlibet (exists x : A, f x = y /\ False)).
+    * intros.
+      inversion H.
+      exact (Logic.proj2 H0).
+  - intros.
+    split.
+    * intro.
+      simpl in H.
+      destruct H.
+    + exists x.
+      split.
+      exact H.
+      simpl.
+      left.
+      reflexivity.
+    + apply IHl with (y := y) in H.
+      inversion H.
+      exists x0.
+      simpl.
+      split.
+      { exact (Logic.proj1 H0). }
+      { right. exact (Logic.proj2 H0). }
+      * intro.
+        simpl.
+        destruct H.
+        destruct H.
+        simpl in H0.
+        destruct H0.
+        { rewrite <- H0 in H. left. exact H. }
+        {
+          right.
+          apply (IHl y).
+          exists x0.
+          split.
+          exact H.
+          exact H0.
+        }
+Qed. 
+     
+      
+  
 (** [] *)
 
 (** **** Exercise: 2 stars (in_app_iff)  *)
 Lemma in_app_iff : forall A l l' (a:A),
   In a (l++l') <-> In a l \/ In a l'.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - intro.
+    simpl in H.
+    induction l.
+    * simpl in H.
+      right.
+      exact H.
+    * simpl in H.
+      destruct H.
+      { rewrite H.
+        simpl.
+        left.
+        left.
+        reflexivity. }
+      { apply IHl in H.
+        destruct H.
+        { simpl. left. right. exact H. }
+        { right. exact H. }
+      }
+  - intro.
+    induction l.
+    * simpl.
+      simpl in H.
+      destruct H.
+      exact (ex_falso_quodlibet (In a l') H).
+      exact H.
+    * simpl.
+      simpl in H.
+      destruct H.
+      {
+        destruct H.
+        { left. exact H. }
+        { right. exact (IHl (Logic.or_introl H)). }
+      }
+      {
+        right.
+        exact (IHl (Logic.or_intror H)).
+      }
+Qed. 
+        
 (** [] *)
 
 (** **** Exercise: 3 stars (All)  *)
@@ -777,17 +997,59 @@ Proof.
     lemma below.  (Of course, your definition should _not_ just
     restate the left-hand side of [All_In].) *)
 
-Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint All {T : Type} (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | [] => True
+  | x' :: l' => P x' /\ All P l'
+  end.
+
 
 Lemma All_In :
   forall T (P : T -> Prop) (l : list T),
     (forall x, In x l -> P x) <->
     All P l.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l.
+  - split.
+    * intro.
+      simpl.
+      exact I.
+    * intros.
+      simpl in H.
+      simpl in H0.
+      inversion H0.
+  - split.
+    intros.
+    simpl.
+    simpl in H.
+    assert (P x) as H1.
+    { apply (H x). left. reflexivity. }
+    split.
+    { exact H1. }
+    { apply (Logic.proj1 IHl).
+      intros.
+      exact (H x0 (Logic.or_intror H0)).
+    }
+    {
+      intros.
+      simpl in H0.
+      destruct H0.
+      { rewrite <- H0.
+        simpl in H.
+        exact (Logic.proj1 H).
+      }
+      {
+        simpl in H.
+        apply Logic.proj2 in H.
+        exact (Logic.proj2 IHl H x0 H0).
+      }
+    }
+Qed.    
+    
+  
 (** [] *)
-
+    
 (** **** Exercise: 3 stars (combine_odd_even)  *)
 (** Complete the definition of the [combine_odd_even] function below.
     It takes as arguments two properties of numbers, [Podd] and
