@@ -836,13 +836,12 @@ Proof. apply c2. apply c3. apply c1. Qed.
 
 Definition fR : nat -> nat -> nat := fun a b => (a + b).
 
-  
-
 Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
 Proof.
+  intros.
   unfold fR.
   split.
-  - intros.
+  - intro.
     induction H.
     * reflexivity.
     * simpl.
@@ -859,56 +858,14 @@ Proof.
       exact IHR.
     * rewrite plus_comm.
       exact IHR.
-  - generalize dependent n.
-    generalize dependent o.
+  - intro.
     induction m.
-    {
-      intros.
-      destruct n.
-      {
-        destruct o.
-        {        
-          exact c1.
-        }
-        {
-          inversion H.
-        }
-      }
-      {
-        destruct o.
-        {
-          inversion H.
-        }
-        {
-          simpl in H.
-          apply S_injective in H.
-          rewrite H.
-          assert (forall x, R 0 x x) as R_id.
-          {
-            induction x.
-            { exact c1. }
-            { apply c3. exact IHx. }
-          }         
-          apply R_id.
-        }
-      }
-    }
-    {
-      intros.
-      destruct o.
-      {
-        inversion H.
-      }
-      {
-        apply c2.
-        simpl in H.
-        apply S_injective in H.
-        apply IHm.
-        exact H.
-      }
-    }
-Qed.
-
+    * simpl in H.
+      rewrite H.
+      induction o.
+      { exact c1. }
+      { apply c3. apply IHo. rewrite H. 
+      
     
 
   
@@ -952,72 +909,7 @@ End R.
       is a subsequence of [l3], then [l1] is a subsequence of [l3].
       Hint: choose your induction carefully! *)
 
-Inductive subseq {T : Type} : list T -> list T -> Prop :=
-| subnil   : forall l, subseq nil l
-| subdrop  : forall x l1 l2, subseq l1 l2 -> subseq l1 (x :: l2)
-| submatch : forall x l1 l2, subseq l1 l2 -> subseq (x :: l1) (x :: l2).
-
-Theorem subseq_refl: forall A (l : list A), subseq l l.
-Proof.
-  intros.
-  induction l.
-  - apply subnil.
-  - apply submatch.
-    exact IHl.
-Qed.
-
-Theorem subseq_app: forall A (l1 l2 l3 : list A),
-    subseq l1 l2 -> subseq l1 (l2 ++ l3).
-Proof.
-  intros.
-  induction H.
-  - apply subnil.
-  - simpl.
-    apply subdrop.
-    exact IHsubseq.
-  - simpl.
-    apply submatch.
-    exact IHsubseq.
-Qed.
-
-Lemma subseq_nil_nil : forall A (l : list A), subseq l [ ] -> l = [].
-Proof.
-  intros.
-  inversion H.
-  reflexivity.
-Qed.
-
-Theorem subseq_trans: forall A (l1 l2 l3 : list A),
-    subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
-Proof.
-  intros.
-  generalize dependent l1.
-  induction H0.
-  - intros.
-    assert (G := subseq_nil_nil A l1 H).
-    rewrite G.
-    apply subnil.
-  - intros.
-    apply subdrop.
-    apply IHsubseq.
-    exact H.
-  - intros.
-    apply subdrop.
-    apply IHsubseq.
-    (* FILL IN HERE *)
-Admitted.
-
-
-
-
-
-
-
-
-
-
-    
-
+(* FILL IN HERE *)
 (** [] *)
 
 (** **** Exercise: 2 stars, optionalM (R_provability2)  *)
