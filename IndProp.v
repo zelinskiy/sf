@@ -127,7 +127,14 @@ Qed.
 Theorem ev_double : forall n,
   ev (double n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction n.
+  - exact ev_0.
+  - simpl.
+    apply ev_SS.
+    exact IHn.
+Qed.
+  
+  
 (** [] *)
 
 (* ################################################################# *)
@@ -271,12 +278,21 @@ Proof.
 Theorem SSSSev__even : forall n,
   ev (S (S (S (S n)))) -> ev n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+  inversion H1.
+  exact H3.
+Qed.
 
 Theorem even5_nonsense :
   ev 5 -> 2 + 2 = 9.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  inversion H.
+  inversion H1.
+  inversion H3.
+Qed.
+  
 (** [] *)
 
 (** The way we've used [inversion] here may seem a bit
@@ -402,7 +418,35 @@ Qed.
 (** **** Exercise: 2 stars (ev_sum)  *)
 Theorem ev_sum : forall n m, ev n -> ev m -> ev (n + m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  destruct n.
+  - intros.
+    exact H0.
+  - destruct m.
+    * intros.
+      simpl.
+      rewrite <- plus_n_O.
+      exact H.
+    * intros.
+      rewrite ev_even_iff.
+      rewrite ev_even_iff in H.
+      rewrite ev_even_iff in H0.
+      destruct H.
+      destruct H0.
+      rewrite H.
+      rewrite H0.
+      exists (x + x0).
+      rewrite ? double_plus.
+      rewrite plus_assoc.
+      rewrite plus_assoc.
+      apply f_equal with (f := fun z => z+ x0).
+      rewrite plus_comm.
+      rewrite plus_assoc.
+      apply f_equal with (f := fun z => z+ x).
+      rewrite plus_comm.
+      reflexivity.
+Qed.
+      
+      
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced, optional (ev_alternate)  *)
@@ -421,7 +465,22 @@ Inductive ev' : nat -> Prop :=
 
 Theorem ev'_ev : forall n, ev' n <-> ev n.
 Proof.
- (* FILL IN HERE *) Admitted.
+  intro.
+  split.
+  - intro.
+    induction H.
+    * exact ev_0.
+    * exact (ev_SS 0 ev_0).
+    * exact (ev_sum n m IHev'1 IHev'2).
+  - intro.
+    induction H.
+    * exact ev'_0.
+    * assert ((S (S n)) = n + 2).
+      { rewrite plus_comm. reflexivity. }
+      rewrite H0.
+      exact (ev'_sum n 2 IHev ev'_2).
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced, recommended (ev_ev__ev)  *)
@@ -431,7 +490,16 @@ Proof.
 Theorem ev_ev__ev : forall n m,
   ev (n+m) -> ev n -> ev m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H0.
+  - exact H.
+  - simpl in H.
+    apply IHev.
+    inversion H.
+    exact H2.
+Qed.
+    
+
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (ev_plus_plus)  *)
@@ -442,7 +510,12 @@ Proof.
 Theorem ev_plus_plus : forall n m p,
   ev (n+m) -> ev (n+p) -> ev (m+p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply ev_sum.
+  apply ev'_ev in H  
+  
+  
+  
 (** [] *)
 
 (* ################################################################# *)

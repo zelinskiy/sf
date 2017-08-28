@@ -224,14 +224,14 @@ Qed.
     [A /\ B] but in some context we need just [A] (or just [B]).
     The following lemmas are useful in such cases: *)
 
-Lemma proj1 : forall P Q : Prop,
+Lemma pr1 : forall P Q : Prop,
   P /\ Q -> P.
 Proof.
   intros P Q [HP HQ].
   apply HP.  Qed.
 
 (** **** Exercise: 1 star, optional (proj2)  *)
-Lemma proj2 : forall P Q : Prop,
+Lemma pr2 : forall P Q : Prop,
   P /\ Q -> Q.
 Proof.
   intros.
@@ -647,12 +647,12 @@ Proof.
   left.
   exact H.
   right.
-  exact (Logic.proj1 H).
+  exact (proj1 H).
   destruct H.
   left.
   exact H.
   right.
-  exact (Logic.proj2 H).
+  exact (proj2 H).
   intro.
   destruct H.
   destruct H.
@@ -1207,7 +1207,7 @@ Example lemma_application_ex :
     n = 0.
 Proof.
   intros n ns H.
-  destruct (proj1 _ _ (In_map_iff _ _ _ _ _) H)
+  destruct (pr1 _ _ (In_map_iff _ _ _ _ _) H)
            as [m [Hm _]].
   rewrite mult_0_r in Hm. rewrite <- Hm. reflexivity.
 Qed.
