@@ -180,10 +180,14 @@ Print ev_4'''.
 
 Theorem ev_8 : ev 8.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply ev_SS.
+  apply ev_SS.
+  apply ev_SS.
+  apply ev_SS.
+  apply ev_0.
+Qed.
 
-Definition ev_8' : ev 8 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ev_8' : ev 8 := ev_SS 6 (ev_SS 4 (ev_SS 2 (ev_SS 0 ev_0))).
 (** [] *)
 
 (* ################################################################# *)
@@ -372,8 +376,9 @@ Definition and_comm' P Q : P /\ Q <-> Q /\ P :=
 (** **** Exercise: 2 stars, optional (conj_fact)  *)
 (** Construct a proof object demonstrating the following proposition. *)
 
-Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition conj_fact : forall P Q R, P /\ Q -> Q /\ R -> P /\ R :=
+  fun _ _ _ p q => conj (proj1 p) (proj2 q).
+  
 (** [] *)
 
 (** ** Disjunction
@@ -400,8 +405,12 @@ End Or.
 (** Try to write down an explicit proof object for [or_commut] (without
     using [Print] to peek at the ones we already defined!). *)
 
-Definition or_comm : forall P Q, P \/ Q -> Q \/ P 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition or_comm : forall P Q, P \/ Q -> Q \/ P :=
+  fun _ _ x => match x with
+               | or_introl p => or_intror p
+               | or_intror q => or_introl q
+               end.
+
 (** [] *)
 
 (** ** Existential Quantification
@@ -439,8 +448,8 @@ Definition some_nat_is_even : exists n, ev n :=
 (** **** Exercise: 2 stars, optional (ex_ev_Sn)  *)
 (** Complete the definition of the following proof object: *)
 
-Definition ex_ev_Sn : ex (fun n => ev (S n)) 
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition ex_ev_Sn : ex (fun n => ev (S n)) := ex_intro _ 1 (ev_SS 0 ev_0).
+
 (** [] *)
 
 (* ================================================================= *)
@@ -497,7 +506,11 @@ Notation "x = y" := (eq x y)
 Lemma leibniz_equality : forall (X : Type) (x y: X),
   x = y -> forall P:X->Prop, P x -> P y.
 Proof.
-(* FILL IN HERE *) Admitted.
+  intros.
+  destruct H.
+  exact H0.
+Qed.
+  
 (** [] *)
 
 (** We can use [eq_refl] to construct evidence that, for example, [2 =

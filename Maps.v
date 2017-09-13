@@ -260,7 +260,9 @@ Qed.
 Lemma beq_idP : forall x y, reflect (x = y) (beq_id x y).
 Proof.
   intros.
-  
+  apply iff_reflect. rewrite beq_id_true_iff. reflexivity.
+Qed.
+
 (** [] *)
 
 (** Now, given [id]s [x1] and [x2], we can use the [destruct (beq_idP
@@ -277,7 +279,16 @@ Proof.
 Theorem t_update_same : forall X x (m : total_map X),
   t_update m x (m x) = m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_update.
+  apply functional_extensionality.
+  intro.
+  destruct (beq_idP x x0).
+  * rewrite e.
+    reflexivity.
+  * reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (t_update_permute)  *)
@@ -291,7 +302,21 @@ Theorem t_update_permute : forall (X:Type) v1 v2 x1 x2
     (t_update (t_update m x2 v2) x1 v1)
   = (t_update (t_update m x1 v1) x2 v2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_update.
+  apply functional_extensionality.
+  intro.
+  destruct (beq_idP x1 x).
+  - destruct (beq_idP x2 x).
+    * rewrite <- e0 in e.
+      symmetry in e.
+      absurd (x2 = x1).
+      { exact H. }
+      { exact e. }
+    * reflexivity.
+  - reflexivity.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)

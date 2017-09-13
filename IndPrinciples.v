@@ -61,7 +61,15 @@ Proof.
 Theorem plus_one_r' : forall n:nat,
   n + 1 = S n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  apply nat_ind with (n := n).
+  - reflexivity.
+  - intros.
+    simpl.
+    rewrite H.
+    reflexivity.
+Qed.
+  
 (** [] *)
 
 (** Coq generates induction principles for every datatype defined with
@@ -100,6 +108,11 @@ Check yesno_ind.
 (** Write out the induction principle that Coq will generate for the
     following datatype.  Write down your answer on paper or type it
     into a comment, and then compare it with what Coq prints. *)
+(*
+forall P: rgb -> Prop, 
+P red -> P green -> P blue 
+-> (forall c:rgb, P c)
+*)
 
 Inductive rgb : Type :=
   | red : rgb
@@ -155,10 +168,19 @@ Inductive natlist1 : Type :=
     type it into a comment, and then compare it with what Coq
     prints.) *)
 
+(*
+forall P : byntree -> Prop,
+P bempty ->
+(forall y, P (bleaf y)) ->
+(forall y b1 b2, P b1 -> P b2 -> P (nbranch y b1 b2)) ->
+forall b, P b
+*)
+
 Inductive byntree : Type :=
  | bempty : byntree
  | bleaf  : yesno -> byntree
  | nbranch : yesno -> byntree -> byntree -> byntree.
+Check byntree_ind.
 (** [] *)
 
 (** **** Exercise: 1 star, optional (ex_set)  *)
@@ -174,8 +196,12 @@ Inductive byntree : Type :=
     Give an [Inductive] definition of [ExSet]: *)
 
 Inductive ExSet : Type :=
-  (* FILL IN HERE *)
+| con1 : bool -> ExSet
+| con2 : nat -> ExSet -> ExSet
 .
+
+Check ExSet_ind.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -229,7 +255,15 @@ Check tree_ind.
             (forall m : mytype X, P m ->
                forall n : nat, P (constr3 X m n)) ->
             forall m : mytype X, P m
-*) 
+ *)
+
+Inductive mytype (X : Type) :=
+| constr1 : X -> mytype X
+| constr2 : nat -> mytype X
+| constr3 : mytype X -> nat -> mytype X
+.
+Check mytype_ind.
+
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo)  *)
@@ -243,7 +277,14 @@ Check tree_ind.
              (forall f1 : nat -> foo X Y,
                (forall n : nat, P (f1 n)) -> P (quux X Y f1)) ->
              forall f2 : foo X Y, P f2
-*) 
+ *)
+
+Inductive foo (X Y : Type) :=
+| bar : X -> foo X Y
+| baz : Y -> foo X Y
+| quux : (nat -> foo X Y) -> foo X Y
+.
+Check foo_ind.
 (** [] *)
 
 (** **** Exercise: 1 star, optional (foo')  *)
@@ -259,12 +300,12 @@ Inductive foo' (X:Type) : Type :=
      foo'_ind :
         forall (X : Type) (P : foo' X -> Prop),
               (forall (l : list X) (f : foo' X),
-                    _______________________ ->
-                    _______________________   ) ->
-             ___________________________________________ ->
-             forall f : foo' X, ________________________
+                    P f -> P (C1 X l f)) P f -> 
+                    P (C1 X l f)) ->
+                    P (C2 X) -> 
+                    forall f1 : foo' X, P f1
 *)
-
+Check foo'_ind.
 (** [] *)
 
 (* ################################################################# *)
@@ -404,7 +445,40 @@ Proof.
     induction, and state the theorem and proof in terms of this
     defined proposition.  *)
 
-(* FILL IN HERE *)
+Definition P_assoc (a b c:nat) : Prop :=
+  (a + b) + c = a + (b + c).
+
+Theorem plus_assoc'' : forall a b c : nat,
+  P_assoc a b c.
+Proof.
+  intros.
+  induction a.
+  - unfold P_assoc.
+    reflexivity.
+  - unfold P_assoc.
+    simpl.
+    unfold P_assoc in IHa.
+    apply f_equal.
+    apply IHa.
+Qed.
+
+Definition P_comm (m n:nat) : Prop :=
+  n + m = m + n.
+
+Theorem plus_comm''' : forall n m : nat, P_comm m n.
+Proof.
+  intros.
+  induction m.
+  - unfold P_comm.
+    rewrite <- plus_n_O.
+    reflexivity.
+  - unfold P_comm.
+    simpl.
+    rewrite <- plus_n_Sm.
+    rewrite IHm.
+    reflexivity.
+Qed.
+  
 (** [] *)
 
 (* ################################################################# *)
