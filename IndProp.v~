@@ -980,6 +980,13 @@ Proof.
     exact IHsubseq.
 Qed.
 
+Lemma subseq_nil_nil : forall A (l : list A), subseq l [ ] -> l = [].
+Proof.
+  intros.
+  inversion H.
+  reflexivity.
+Qed.
+
 Theorem subseq_trans: forall A (l1 l2 l3 : list A),
     subseq l1 l2 -> subseq l2 l3 -> subseq l1 l3.
 Proof.
@@ -987,24 +994,29 @@ Proof.
   generalize dependent l1.
   induction H0.
   - intros.
-    assert (l1 = []).
-    { inversion H. reflexivity. }
-    rewrite H0.
+    assert (G := subseq_nil_nil A l1 H).
+    rewrite G.
     apply subnil.
   - intros.
     apply subdrop.
     apply IHsubseq.
     exact H.
   - intros.
-    inversion H.
-    * apply subnil.
-    * apply subdrop.
-      apply IHsubseq.
-      exact H3.
-    * apply submatch.
-      apply IHsubseq.
-      exact H3.
-Qed.
+    apply subdrop.
+    apply IHsubseq.
+    (* FILL IN HERE *)
+Admitted.
+
+
+
+
+
+
+
+
+
+
+    
 
 (** [] *)
 
@@ -1240,22 +1252,13 @@ Qed.
 Lemma empty_is_empty : forall T (s : list T),
   ~ (s =~ EmptySet).
 Proof.
-  intros.
-  intro.
-  inversion H.
-Qed.
+  (* FILL IN HERE *) Admitted.
 
 Lemma MUnion' : forall T (s : list T) (re1 re2 : reg_exp T),
   s =~ re1 \/ s =~ re2 ->
   s =~ Union re1 re2.
 Proof.
-  intros.
-  destruct H.
-  - apply MUnionL.
-    exact H.
-  - apply MUnionR.
-    exact H.
-Qed.
+  (* FILL IN HERE *) Admitted.
 
 (** The next lemma is stated in terms of the [fold] function from the
     [Poly] chapter: If [ss : list (list T)] represents a sequence of
@@ -1266,86 +1269,18 @@ Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
   (forall s, In s ss -> s =~ re) ->
   fold app ss [] =~ Star re.
 Proof.
-  intros.
-  induction ss.
-  - simpl.
-    apply MStar0.
-  - simpl.
-    apply MStarApp.
-    * apply H.
-      simpl.
-      left.
-      reflexivity.
-    * apply IHss.
-      intros.
-      apply H.
-      simpl.
-      right.
-      exact H0.
-Qed.
-      
+  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** **** Exercise: 4 stars (reg_exp_of_list)  *)
 (** Prove that [reg_exp_of_list] satisfies the following
     specification: *)
 
-Lemma app_nil : forall T (xs ys : list T), xs ++ ys = [] -> xs = [] /\ ys = [].
-Proof.
-  intros.
-  destruct xs.
-  destruct ys.
-  split.
-  reflexivity.
-  reflexivity.
-  simpl in H.
-  inversion H.
-  simpl in H.
-  inversion H.
-Qed.
 
 Lemma reg_exp_of_list_spec : forall T (s1 s2 : list T),
   s1 =~ reg_exp_of_list s2 <-> s1 = s2.
 Proof.
-  intros.
-  split.
-  - generalize dependent s1.
-    induction s2.
-    * intros.
-      inversion H.
-      reflexivity.
-    * intros.
-      simpl.
-      inversion H.
-      inversion H3.
-      simpl.
-      apply f_equal.
-      apply IHs2.
-      exact H4.
-  - intro.
-    rewrite H.
-    generalize dependent s1.
-    induction s2.
-    intros.
-    simpl.
-    exact MEmpty.
-    intros.
-    simpl.
-    assert (x::s2 = [x] ++ s2).
-    { reflexivity. }
-    rewrite H0.
-    apply MApp.
-    apply MChar.
-    apply IHs2 with (s1 := s2).
-    reflexivity.
-Qed.
-    
-      
-      
-     
-      
-  
-  
+  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** Since the definition of [exp_match] has a recursive

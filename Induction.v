@@ -130,22 +130,53 @@ Proof.
 Theorem mult_0_r : forall n:nat,
   n * 0 = 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro n.
+  induction n.
+  - simpl. reflexivity.
+  - simpl.
+    exact IHn.
+Qed.
+    
 
+  
 Theorem plus_n_Sm : forall n m : nat,
   S (n + m) = n + (S m).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros n m.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    apply f_equal with (f := S).
+    exact IHn.
+Qed.
 
 Theorem plus_comm : forall n m : nat,
   n + m = m + n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    rewrite <- plus_n_O.
+    reflexivity.
+  - simpl.
+    rewrite IHn.
+    rewrite plus_n_Sm.
+    reflexivity.
+Qed.
+  
 
 Theorem plus_assoc : forall n m p : nat,
   n + (m + p) = (n + m) + p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHn.
+    reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars (double_plus)  *)
@@ -161,7 +192,15 @@ Fixpoint double (n:nat) :=
 
 Lemma double_plus : forall n, double n = n + n .
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHn.
+    rewrite plus_n_Sm.
+    reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (evenb_S)  *)
@@ -175,14 +214,24 @@ Proof.
 Theorem evenb_S : forall n : nat,
   evenb (S n) = negb (evenb n).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    simpl in IHn.
+    rewrite IHn.
+    rewrite negb_involutive.
+    reflexivity.
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 1 starM (destruct_induction)  *)
 (** Briefly explain the difference between the tactics [destruct]
     and [induction].
 
-(* FILL IN HERE *)
+(* destruct does not generate induction hypothesis. *)
 *)
 (** [] *)
 
@@ -381,7 +430,9 @@ Proof.
 
     Theorem: Addition is commutative.
 
-    Proof: (* FILL IN HERE *)
+    Proof: We prove that n + m = m + n, for all n, m. Induction on n.
+    Induction base : 0 + m = m + 0. Easy, using the fact, that 0 is left and right identity for +.
+    Induction step : (n + 1) + m = m + (n + 1). By definition of + we have (n + m) + 1 = m + (n + 1). By induction hypothesis we have (m + n) + 1 = m + (n + 1). By successor lemma we have (m + n) + 1 = (m + n) + 1. QED.
 *)
 (** [] *)
 
@@ -392,7 +443,11 @@ Proof.
 
     Theorem: [true = beq_nat n n] for any [n].
 
-    Proof: (* FILL IN HERE *)
+    Proof: By induction on n.
+    Induction base : true = beq_nat 0 0. By definition of beq_nat, beq_nat 0 0 = true. 
+    Induction step : true = beq_nat (S n') (S n'). By definition of beq_nat having m = S n', having true = beq_nat n' n'. Applying induction hypothesis finishes the proof.
+QED.
+
 [] *)
 
 (* ################################################################# *)
@@ -405,17 +460,45 @@ Proof.
 Theorem plus_swap : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite (plus_assoc n m p).
+  rewrite (plus_comm n m).
+  rewrite plus_assoc.
+  reflexivity.
+Qed.
 
 (** Now prove commutativity of multiplication.  (You will probably
     need to define and prove a separate subsidiary theorem to be used
     in the proof of this one.  You may find that [plus_swap] comes in
     handy.) *)
 
+Lemma suc_mult : forall m n, m * S n = m + m * n.
+Proof.
+  intros.
+  induction m.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite IHm.
+    rewrite plus_assoc.
+    rewrite plus_assoc.
+    rewrite (plus_comm m n).
+    reflexivity.
+Qed.
+
 Theorem mult_comm : forall m n : nat,
   m * n = n * m.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    rewrite mult_0_r.
+    reflexivity.
+  - simpl.
+    rewrite <- IHn.
+    rewrite suc_mult.
+    reflexivity.
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (more_exercises)  *)
@@ -430,31 +513,59 @@ Proof.
 Theorem leb_refl : forall n:nat,
   true = leb n n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro.
+  induction n.
+  auto.
+  simpl.
+  exact IHn.
+Qed.
 
 Theorem zero_nbeq_S : forall n:nat,
   beq_nat 0 (S n) = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros [|].
+  - simpl.
+    reflexivity.
+  - simpl.
+    reflexivity.
+Qed.
 
 Theorem andb_false_r : forall b : bool,
   andb b false = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite andb_commutative.
+  simpl.
+  reflexivity.
+Qed.
 
 Theorem plus_ble_compat_l : forall n m p : nat,
   leb n m = true -> leb (p + n) (p + m) = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction p.
+  - simpl.
+    exact H.
+  - simpl.
+    exact IHp.
+Qed.
+  
 
 Theorem S_nbeq_0 : forall n:nat,
   beq_nat (S n) 0 = false.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  simpl.
+  reflexivity.
+Qed.
 
 Theorem mult_1_l : forall n:nat, 1 * n = n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro.
+  simpl.
+  rewrite plus_n_O.
+  reflexivity.
+Qed.
 
 Theorem all3_spec : forall b c : bool,
     orb
@@ -463,17 +574,46 @@ Theorem all3_spec : forall b c : bool,
                (negb c))
   = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  destruct b.
+  - simpl.
+    destruct c.
+    + easy.
+    + easy.
+  - simpl.
+    reflexivity.
+Qed.
 
 Theorem mult_plus_distr_r : forall n m p : nat,
   (n + m) * p = (n * p) + (m * p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intro.
+  induction p.
+  - rewrite ? mult_0_r.
+    simpl.
+    reflexivity.
+  - rewrite ? suc_mult.
+    rewrite IHp.
+    rewrite ? plus_assoc.
+    rewrite <- (plus_assoc n m (n*p)).
+    rewrite (plus_comm m (n*p)).
+    rewrite plus_assoc.
+    reflexivity.
+Qed.
 
 Theorem mult_assoc : forall n m p : nat,
   n * (m * p) = (n * m) * p.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite mult_plus_distr_r.
+    rewrite IHn.
+    reflexivity.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (beq_nat_refl)  *)
@@ -486,7 +626,13 @@ Proof.
 Theorem beq_nat_refl : forall n : nat,
   true = beq_nat n n.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction n.
+  - simpl.
+    reflexivity.
+  - simpl.
+    exact IHn.
+Qed.
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (plus_swap')  *)
@@ -502,7 +648,13 @@ Proof.
 Theorem plus_swap' : forall n m p : nat,
   n + (m + p) = m + (n + p).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  rewrite plus_comm.
+  replace (n + p) with (p + n).
+  - rewrite plus_assoc.
+    reflexivity.
+  - exact (plus_comm p n).
+Qed.
 (** [] *)
 
 (** **** Exercise: 3 stars, recommendedM (binary_commute)  *)
@@ -530,7 +682,29 @@ Proof.
     definitions to make the property easier to prove, feel free to
     do so! *)
 
-(* FILL IN HERE *)
+Inductive bin : Type := | Z : bin | T : bin -> bin | ST : bin -> bin.
+
+Fixpoint incr (n : bin) :=
+  match n with
+  | Z => ST Z
+  | T n => ST n
+  | ST n => T (incr n)
+  end.
+
+Fixpoint bin_to_nat (b : bin) :=
+  match b with
+  | Z => O
+  | T n => 2 * (bin_to_nat n)
+  | ST n => S (2 * (bin_to_nat n))
+  end.
+
+Fixpoint nat_to_bin (m : nat) :=
+  match m with
+  | O => Z
+  | S n => incr (nat_to_bin n)
+  end.
+
+
 (** [] *)
 
 (** **** Exercise: 5 stars, advancedM (binary_inverse)  *)
@@ -559,7 +733,92 @@ Proof.
     Again, feel free to change your earlier definitions if this helps
     here. *)
 
-(* FILL IN HERE *)
+Fixpoint normalize (b : bin) :=
+  match b with
+  | Z => Z
+  | T b' => match b' with
+            | Z => Z
+            | _ => T (normalize b')
+            end
+  | ST b' => ST (normalize b')
+  end.
+
+Lemma  bin_to_nat_T : forall b,  bin_to_nat (T b) = bin_to_nat b + bin_to_nat b.
+Proof.
+  simpl.
+  intro.
+  rewrite <- (plus_n_O (bin_to_nat b)).
+  reflexivity.
+Qed.
+
+(*Lemma S_bin_to_nat : S (bin_to_nat b) *)
+
+Lemma l1 : forall b, bin_to_nat b + bin_to_nat b + bin_to_nat b + S (S (bin_to_nat b)) = bin_to_nat (T (ST b)).
+Proof.
+  intro.
+  induction b.
+  - easy.
+  - simpl.
+    rewrite  <- ? plus_n_O.
+    rewrite ? plus_n_Sm.
+    rewrite ? plus_assoc.
+    rewrite <- 3? plus_assoc.
+    replace (
+        ((bin_to_nat b +
+         (bin_to_nat b +
+          (bin_to_nat b + S (S (bin_to_nat b)))))))
+      with
+         ((bin_to_nat b +
+          bin_to_nat b +
+          bin_to_nat b + S (S (bin_to_nat b)))).
+    rewrite IHb.
+    reflexivity.
+    rewrite ? plus_assoc.
+    reflexivity.
+  - simpl.
+    rewrite  <- ? plus_n_O.
+    rewrite ? plus_n_Sm.
+    rewrite ? plus_assoc.
+    rewrite <- ? plus_n_Sm.
+    reflexivity.
+Qed.
+    
+Theorem norm_correct : forall b, bin_to_nat (normalize b) = bin_to_nat b.
+Proof.
+  intro.
+  induction b.
+  - simpl.
+    reflexivity.
+  - simpl.
+    rewrite <- plus_n_O.
+    destruct b.
+    + auto.
+    + rewrite bin_to_nat_T.
+      rewrite IHb.
+      reflexivity.
+    + simpl.
+      rewrite  <- ? plus_n_O.
+      rewrite ? plus_n_Sm.
+      rewrite -> ? plus_assoc.
+      rewrite l1.
+      rewrite bin_to_nat_T.
+      rewrite l1.
+      rewrite bin_to_nat_T.
+      rewrite <- IHb.
+      simpl.
+      reflexivity.
+  - simpl.
+    rewrite <- ? plus_n_O.
+    rewrite IHb.
+    reflexivity.
+Qed.
+      
+
+
+
+
+
+      
 (** [] *)
 
 (** $Date: 2016-10-07 14:01:19 -0400 (Fri, 07 Oct 2016) $ *)
