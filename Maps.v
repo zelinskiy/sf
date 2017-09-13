@@ -184,7 +184,11 @@ Proof. reflexivity. Qed.
 
 Lemma t_apply_empty:  forall A x v, @t_empty A v x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_empty.
+  reflexivity.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_eq)  *)
@@ -195,7 +199,12 @@ Proof.
 Lemma t_update_eq : forall A (m: total_map A) x v,
   (t_update m x v) x = v.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_update.
+  rewrite <- beq_id_refl.
+  reflexivity.
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_neq)  *)
@@ -208,7 +217,13 @@ Theorem t_update_neq : forall (X:Type) v x1 x2
   x1 <> x2 ->
   (t_update m x1 v) x2 = m x2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_update.
+  rewrite (proj2 (beq_id_false_iff x1 x2) H).
+  reflexivity.
+Qed.
+
+  
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (t_update_shadow)  *)
@@ -222,7 +237,15 @@ Lemma t_update_shadow : forall A (m: total_map A) v1 v2 x,
     t_update (t_update m x v1) x v2
   = t_update m x v2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  unfold t_update.
+  apply functional_extensionality.
+  intro.
+  destruct (beq_id x x0).
+  - reflexivity.
+  - reflexivity.
+Qed.
+  
 (** [] *)
 
 (** For the final two lemmas about total maps, it's convenient to use
@@ -236,7 +259,8 @@ Proof.
 
 Lemma beq_idP : forall x y, reflect (x = y) (beq_id x y).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  
 (** [] *)
 
 (** Now, given [id]s [x1] and [x2], we can use the [destruct (beq_idP
