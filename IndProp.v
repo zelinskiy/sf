@@ -1424,13 +1424,136 @@ Qed.
     regular expression matches some string. Prove that your function
     is correct. *)
 
-Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
 
+Fixpoint re_not_empty {T : Type} (re : reg_exp T) : bool :=
+  match re with
+  | EmptySet => false
+  | EmptyStr => true
+  | Char _ => true
+  | App re1 re2 => re_not_empty re1 && re_not_empty re2
+  | Union re1 re2 => re_not_empty re1 || re_not_empty re2
+  | Star re => true
+  end.
+  
 Lemma re_not_empty_correct : forall T (re : reg_exp T),
   (exists s, s =~ re) <-> re_not_empty re = true.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  {
+    intros.
+    induction re.
+    {
+      unfold re_not_empty.
+      destruct H.
+      inversion H.
+    }
+    {
+      unfold re_not_empty.
+      reflexivity.
+    }
+    {
+      unfold re_not_empty.
+      reflexivity.
+    }
+    {
+      destruct H.
+      {
+        inversion H.
+        simpl.
+        rewrite andb_true_iff.
+        split.
+        {
+          apply IHre1.      
+          exists s1.
+          exact H3.
+        }
+        {
+          apply IHre2.
+          exists s2.
+          exact H4.
+        }
+      }      
+    }
+    {
+      simpl.
+      rewrite orb_true_iff.
+      destruct H.
+      inversion H.
+      {
+        left.
+        apply IHre1.
+        exists x.
+        exact H2.
+      }
+      {
+        right.
+        apply IHre2.
+        exists x.
+        exact H2.
+      }
+    }
+    {
+      reflexivity.
+    }
+  }
+  {
+    intro.
+    induction re.
+    {
+      inversion H.
+    }
+    {
+      exists [].
+      apply MEmpty.
+    }
+    {
+      exists [t].
+      apply MChar.
+    }
+    {
+      simpl in H.
+      rewrite andb_true_iff in H.
+      destruct H.
+      apply IHre1 in H.
+      apply IHre2 in H0.
+      destruct H.
+      destruct H0.
+      exists (x ++ x0).
+      apply MApp.
+      {
+        exact H.
+      }
+      {
+        exact H0.
+      }
+    }
+    {
+      simpl in H.
+      rewrite orb_true_iff in H.
+      destruct H.
+      {
+        apply IHre1 in H.
+        destruct H.
+        exists x.
+        apply MUnionL.
+        exact H.
+      }
+      {
+        apply IHre2 in H.
+        destruct H.
+        exists x.
+        apply MUnionR.
+        exact H.
+      }
+    }
+    {
+      exists [].
+      apply MStar0.
+    }
+  }
+Qed.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -1561,13 +1684,60 @@ Qed.
     [MStar'] exercise above), shows that our definition of [exp_match]
     for [Star] is equivalent to the informal one given previously. *)
 
+Lemma app_cons : forall T (x : T) xs, x :: xs = [x] ++ xs.
+Proof. intros. reflexivity. Qed.
+
+Lemma StarStar : forall T (s : list T) re, s =~ Star (Star re).
+Proof.
+  intros.
+  remember (Star (Star re)).
+  induction r.
+  - inversion Heqr.
+  - inversion Heqr.
+  - inversion Heqr.
+  - inversion Heqr.
+  - inversion Heqr.
+  - inversion Heqr.
+    induction re.
+    admit.
+Admitted.
+        
 Lemma MStar'' : forall T (s : list T) (re : reg_exp T),
   s =~ Star re ->
   exists ss : list (list T),
     s = fold app ss []
     /\ forall s', In s' ss -> s' =~ re.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  remember (Star re).
+  generalize dependent T.
+  induction r.
+  {
+    intros.
+    inversion Heqr.
+  }
+  {
+    intros.
+    inversion Heqr.
+  }
+  {
+    intros.
+    inversion Heqr.
+  }
+  {
+    intros.
+    inversion Heqr.
+  }
+  {
+    intros.
+    inversion Heqr.
+  }
+  {
+    admit.
+  }
+Admitted.
+
+  
 (** [] *)
 
 (** **** Exercise: 5 stars, advanced (pumping)  *)
@@ -1648,9 +1818,32 @@ Proof.
     as [ | x | s1 re1 s2 re2 Hmatch1 IH1 Hmatch2 IH2
        | s1 re1 re2 Hmatch IH | re1 s2 re2 Hmatch IH
        | re | s1 s2 re Hmatch1 IH1 Hmatch2 IH2 ].
-  - (* MEmpty *)
+  {
     simpl. omega.
-  (* FILL IN HERE *) Admitted.
+  }
+  {
+    simpl. omega.
+  }
+  {
+    admit.
+  }
+  {
+    admit.
+  }
+  {
+    admit.
+  }
+  {
+    admit.
+  }
+  {
+    admit.
+  }
+Admitted.
+  
+      
+    
+      
 
 End Pumping.
 (** [] *)
@@ -1875,8 +2068,12 @@ Qed.
     stutter.) *)
 
 Inductive nostutter {X:Type} : list X -> Prop :=
- (* FILL IN HERE *)
-.
+| nostutter_nil : nostutter []
+| nostutter_char : forall x, nostutter [x]
+| nostutter_cons : forall x h t,
+    nostutter (h :: t) ->
+    (h <> x) ->
+    nostutter (x :: (h :: t)).
 (** Make sure each of these tests succeeds, but feel free to change
     the suggested proof (in comments) if the given one doesn't work
     for you.  Your definition might be different from ours and still
@@ -1888,34 +2085,26 @@ Inductive nostutter {X:Type} : list X -> Prop :=
     example with more basic tactics.)  *)
 
 Example test_nostutter_1: nostutter [3;1;4;1;5;6].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply beq_nat_false_iff; auto.
-  Qed.
-*)
+Proof. repeat constructor; apply beq_nat_false_iff; auto.
+Qed.
+
 
 Example test_nostutter_2:  nostutter (@nil nat).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply beq_nat_false_iff; auto.
-  Qed.
-*)
+Proof. repeat constructor; apply beq_nat_false_iff; auto.
+Qed.
+
 
 Example test_nostutter_3:  nostutter [5].
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. repeat constructor; apply beq_nat_false; auto. Qed.
-*)
+Proof. repeat constructor; apply beq_nat_false; auto. Qed.
 
 Example test_nostutter_4:      not (nostutter [3;1;1;4]).
-(* FILL IN HERE *) Admitted.
-(* 
-  Proof. intro.
+Proof.
+  intro.
   repeat match goal with
     h: nostutter _ |- _ => inversion h; clear h; subst
   end.
-  contradiction H1; auto. Qed.
-*)
+  contradiction H5; auto. Qed.
+
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (filter_challenge)  *)
@@ -2042,7 +2231,36 @@ Lemma in_split : forall (X:Type) (x:X) (l:list X),
   In x l ->
   exists l1 l2, l = l1 ++ x :: l2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction l.
+  {
+    intro.
+    simpl in H.
+    exfalso.
+    exact H.
+  }
+  {
+    intro.
+    simpl in H.
+    destruct H.
+    {
+      rewrite H.
+      exists [].
+      exists l.
+      reflexivity.
+    }
+    {
+      apply IHl in H.
+      destruct H.
+      destruct H.
+      exists (x0 :: x1).
+      exists x2.
+      simpl.
+      apply f_equal.
+      exact H.
+    }
+  }
+Qed.
+
 
 (** Now define a property [repeats] such that [repeats X l] asserts
     that [l] contains at least one repeated element (of type [X]).  *)
@@ -2070,8 +2288,10 @@ Theorem pigeonhole_principle: forall (X:Type) (l1  l2:list X),
    length l2 < length l1 ->
    repeats l1.
 Proof.
-   intros X l1. induction l1 as [|x l1' IHl1'].
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction l1.
+  {
+   
 (** [] *)
 
 
