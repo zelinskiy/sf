@@ -343,13 +343,13 @@ Definition testParsing {X : Type}
   let t := tokenize s in 
   p 100 t.
 
-(*
+
 Eval compute in 
   testParsing parseProductExp "x*y*(x*x)*x".
 
 Eval compute in 
   testParsing parseConjunctionExp "not((x==x||x*x<=(x*x)*x)&&x==x". 
-*)
+
 
 (** Parsing commands: *)
 
@@ -411,7 +411,7 @@ Definition parse (str : string) : optionE (com * list token) :=
 (* ################################################################# *)
 (** * Examples *)
 
-(*
+
 Compute parse "
   IF x == y + 1 + 2 - y * 6 + 3 THEN
     x := x * 1;;
@@ -419,7 +419,8 @@ Compute parse "
   ELSE
     SKIP
   END  ".
-====>
+
+(*====>
   SomeE
      (IFB BEq (AId (Id 0))
               (APlus
@@ -430,7 +431,7 @@ Compute parse "
       ELSE SKIP FI, [])
 *)
 
-(*
+
 Compute parse "
   SKIP;;
   z:=x*y*(x*x);;
@@ -444,7 +445,8 @@ Compute parse "
     SKIP
   END;;
   x:=z  ".
-====>
+
+(*====>
   SomeE
      (SKIP;;
       Id 0 ::= AMult (AMult (AId (Id 1)) (AId (Id 2)))

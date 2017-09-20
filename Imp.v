@@ -479,8 +479,50 @@ Qed.
     optimization and prove it correct -- and build up to something
     more interesting incrementially.)
 
-(* FILL IN HERE *)
-*)
+ *)
+
+Fixpoint optimize_a (a:aexp) : aexp :=
+  match a with
+  | ANum n =>
+      ANum n
+  | APlus (ANum 0) e2 =>
+      optimize_a e2
+  | APlus e1 e2 =>
+      APlus (optimize_a e1) (optimize_a e2)
+  | AMinus e1 e2 =>
+      AMinus (optimize_a e1) (optimize_a e2)
+  | AMult e1 e2 =>
+      AMult (optimize_a e1) (optimize_a e2)
+  end.
+
+Theorem optimize_a_sound : forall a,
+    aeval (optimize_a a) = aeval a.
+Proof.
+Admitted.
+
+
+Fixpoint optimize_b (b : bexp) : bexp :=
+  match b with
+  | BTrue => BTrue
+  | BFalse => BFalse
+  | BEq (ANum 0) (ANum 0) => BTrue
+  | BEq a1 a2 => BEq (optimize_a a1) (optimize_a a2)
+  | BLe (ANum 0) a2 => BTrue
+  | BLe a1 a2 => BLe (optimize_a a1) (optimize_a a2)
+  | BNot BFalse => BTrue
+  | BNot BTrue => BFalse
+  | BNot b1 => BNot (optimize_b b1)
+  | BAnd BFalse b2 => BFalse
+  | BAnd b1 BFalse => BFalse
+  | BAnd BTrue BTrue => BTrue
+  | BAnd b1 b2 => BAnd (optimize_b b1) (optimize_b b2)
+  end.
+
+Theorem optimize_b_sound : forall b,
+    beval (optimize_b b) = beval b.
+Proof.
+Admitted.
+
 (** [] *)
 
 (* ================================================================= *)
@@ -772,13 +814,103 @@ Qed.
     [aevalR], and prove that it is equivalent to [beval].*)
 
 Inductive bevalR: bexp -> bool -> Prop :=
-(* FILL IN HERE *)
+| E_BTrue : bevalR BTrue true
+| E_BFalse : bevalR BFalse false
+| E_BEq : forall (e1 e2: aexp) (n1 n2: nat),
+    (e1 \\ n1) -> (e2 \\ n2) -> bevalR (BEq e1 e2) (beq_nat n1 n2)
+| E_BLe : forall (e1 e2: aexp) (n1 n2: nat),
+    (e1 \\ n1) -> (e2 \\ n2) -> bevalR (BLe e1 e2) (leb n1 n2)
+| E_BNot : forall (e1: bexp) (b1: bool), bevalR e1 b1 -> bevalR (BNot e1) (negb b1)
+| E_BAnd : forall (e1 e2: bexp) (b1 b2: bool),
+    bevalR e1 b1 -> bevalR e2 b2 -> bevalR (BAnd e1 e2) (b1 && b2)
 .
 
 Lemma beval_iff_bevalR : forall b bv,
   bevalR b bv <-> beval b = bv.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  {
+    intro.
+    induction H;
+      try reflexivity;
+      simpl;
+      try (apply aeval_iff_aevalR in H;
+           apply aeval_iff_aevalR in H0;
+           rewrite H;
+           rewrite H0;
+           reflexivity).
+    {
+      rewrite IHbevalR.
+      reflexivity.
+    }
+    {
+      rewrite IHbevalR1.
+      rewrite IHbevalR2.
+      reflexivity.
+    }
+  }
+  {
+    intro.
+    generalize dependent bv.
+    induction b;
+      intros;
+      rewrite <- H;
+      simpl.
+    {
+      constructor.
+    }
+    {
+      constructor.
+    }
+    {
+      constructor;
+        rewrite aeval_iff_aevalR;
+        reflexivity.
+    }
+    {
+      constructor;
+        rewrite aeval_iff_aevalR;
+        reflexivity.
+    }
+    {
+      apply E_BNot.
+      apply IHb.
+      reflexivity.
+    }
+    {
+      destruct bv.
+      {
+        simpl in H.
+        rewrite andb_true_iff in H.
+        destruct H.
+        apply IHb1 in H.
+        apply IHb2 in H0.
+        constructor.
+        {
+          apply IHb1.
+          reflexivity.
+        }
+        {
+          apply IHb2.
+          reflexivity.
+        }
+      }
+      {        
+        apply E_BAnd.
+        {
+          apply IHb1.
+          reflexivity.
+        }
+        {
+          apply IHb2.
+          reflexivity.
+        }
+      }
+    }
+  }
+Qed.
+
 (** [] *)
 
 End AExp.
@@ -1295,7 +1427,24 @@ Example ceval_example2:
     (X ::= ANum 0;; Y ::= ANum 1;; Z ::= ANum 2) / empty_state \\
     (t_update (t_update (t_update empty_state X 0) Y 1) Z 2).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  apply E_Seq with (t_update empty_state X 0).
+  {
+    constructor.
+    constructor.
+  }
+  {
+    apply E_Seq with (t_update (t_update empty_state X 0) Y 1).
+    {
+      apply E_Ass.
+      reflexivity.
+    }
+    {
+      apply E_Ass.
+      reflexivity.
+    }
+  }
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 3 stars, advanced (pup_to_n)  *)
@@ -1304,15 +1453,75 @@ Proof.
    Prove that this program executes as intended for [X] = [2]
    (this is trickier than you might expect). *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition pup_to_n : com :=
+  Y ::= ANum 0;;
+  WHILE (BNot (BEq (AId X) (ANum 0))) DO
+    Y ::= APlus (AId Y) (AId X) ;;
+    X ::= AMinus (AId X) (ANum 1)
+  END.
 
 Theorem pup_to_2_ceval :
   pup_to_n / (t_update empty_state X 2) \\
     t_update (t_update (t_update (t_update (t_update (t_update empty_state
       X 2) Y 0) Y 2) X 1) Y 3) X 0.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold pup_to_n.
+  apply E_Seq with (t_update (t_update empty_state X 2) Y 0).
+  {
+    apply E_Ass.
+    reflexivity.
+  }
+  {
+    apply E_WhileLoop with (t_update (t_update (t_update (t_update empty_state
+                                                                   X 2) Y 0) Y 2) X 1).
+    {
+      reflexivity.
+    }
+    {
+      apply E_Seq with (t_update (t_update (t_update empty_state
+                                                     X 2) Y 0) Y 2).
+      {
+        apply E_Ass.
+        unfold t_update.
+        reflexivity.
+      }
+      {
+        apply E_Ass.
+        reflexivity.
+      }
+    }
+    {
+      apply E_WhileLoop with (t_update (t_update (t_update
+                                                    (t_update (t_update (t_update empty_state
+                                                                                  X 2) Y 0) Y 2) X 1) Y 3) X 0).
+      {
+        reflexivity.
+      }
+      {
+        apply E_Seq with (t_update (t_update (t_update
+                                                (t_update (t_update empty_state
+                                                                    X 2) Y 0) Y 2) X 1) Y 3).
+        {
+          apply E_Ass.
+          unfold t_update.
+          reflexivity.
+        }
+        {
+          apply E_Ass.
+          unfold t_update.
+          reflexivity.
+        }
+      }
+      {
+        apply E_WhileEnd.
+        reflexivity.
+      }
+    }
+  }
+Qed.
+        
+        
+  
 (** [] *)
 
 (* ================================================================= *)
@@ -1391,7 +1600,20 @@ Proof.
 (** **** Exercise: 3 stars, recommendedM (XtimesYinZ_spec)  *)
 (** State and prove a specification of [XtimesYinZ]. *)
 
-(* FILL IN HERE *)
+Theorem XtimesYinZ_spec : forall x y st st',
+    st X = x ->
+    st Y = y ->
+    XtimesYinZ / st \\ st' ->
+    st' Z = x * y.
+Proof.
+  intros.
+  inversion H1.
+  subst.
+  simpl.
+  apply t_update_eq.
+Qed.
+  
+
 (** [] *)
 
 (** **** Exercise: 3 stars, recommended (loop_never_stops)  *)
@@ -1406,8 +1628,33 @@ Proof.
       [loopdef] terminates.  Most of the cases are immediately
       contradictory (and so can be solved in one step with
       [inversion]). *)
+  induction contra.
+  {
+    inversion Heqloopdef.
+  }
+  {
+    inversion Heqloopdef.
+  }
+  {
+    inversion Heqloopdef.
+  }
+  {
+    inversion Heqloopdef.
+  }
+  {
+    inversion Heqloopdef.
+  }
+  {
+    inversion Heqloopdef.
+    rewrite H1 in H.
+    inversion H.    
+  }
+  {
+    apply IHcontra2.
+    exact Heqloopdef.
+  }
+Qed.
 
-  (* FILL IN HERE *) Admitted.
 (** [] *)
 
 (** **** Exercise: 3 stars (no_whilesR)  *)
@@ -1432,14 +1679,81 @@ Fixpoint no_whiles (c : com) : bool :=
     [no_whilesR c] is provable exactly when [c] is a program with no
     while loops.  Then prove its equivalence with [no_whiles]. *)
 
-Inductive no_whilesR: com -> Prop :=
- (* FILL IN HERE *)
-.
+(* MYNOTE: Why check part of CIf which is not executed? *)
 
+Inductive no_whilesR: com -> Prop :=
+| NW_CSkip : no_whilesR CSkip
+| NW_CAss : forall i e, no_whilesR (CAss i e)
+| NW_CSeq : forall c1 c2, no_whilesR c1 -> no_whilesR c2 -> no_whilesR (CSeq c1 c2)
+| NW_CIf : forall b c1 c2, no_whilesR c1 -> no_whilesR c2 -> no_whilesR (CIf b c1 c2).
+    
 Theorem no_whiles_eqv:
    forall c, no_whiles c = true <-> no_whilesR c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  {
+    intro.
+    induction c.
+    {
+      constructor.
+    }
+    {
+      constructor.
+    }
+    {
+      simpl in H.
+      rewrite andb_true_iff in H.
+      destruct H.
+      apply IHc1 in H.
+      apply IHc2 in H0.
+      constructor;assumption.
+    }
+    {
+      simpl in H.
+      rewrite andb_true_iff in H.
+      destruct H.
+      apply IHc1 in H.
+      apply IHc2 in H0.
+      constructor;assumption.
+    }
+    {
+      inversion H.
+    }
+  }
+  {
+    intro.
+    induction c.
+    {
+      constructor.
+    }
+    {
+      constructor.
+    }
+    {
+      inversion H.
+      apply IHc1 in H2.
+      apply IHc2 in H3.
+      simpl.
+      rewrite H2.
+      rewrite H3.
+      reflexivity.
+    }
+    {
+      inversion H.
+      apply IHc1 in H2.
+      apply IHc2 in H4.
+      simpl.
+      rewrite H2.
+      rewrite H4.
+      reflexivity.
+    }
+    {
+      inversion H.
+    }
+  }
+Qed.
+      
 (** [] *)
 
 (** **** Exercise: 4 starsM (no_whiles_terminating)  *)
