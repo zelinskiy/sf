@@ -1761,7 +1761,64 @@ Qed.
     State and prove a theorem [no_whiles_terminating] that says this. *)
 (** Use either [no_whiles] or [no_whilesR], as you prefer. *)
 
-(* FILL IN HERE *)
+Lemma bool_true_or_false : forall b, b = true \/ b = false.
+Proof. intro. destruct b. left. reflexivity. right. reflexivity. Qed.
+
+Theorem no_whiles_terminate : forall p st,
+    no_whilesR p -> exists st', p / st \\ st'.
+Proof.
+  induction p.
+  {
+    intros.
+    exists st.
+    constructor.
+  }
+  {
+    intros.
+    exists (t_update st i (aeval st a)).
+    constructor.
+    reflexivity.
+  }
+  {
+    intros.
+    inversion H.
+    apply IHp1 with st in H2.
+    destruct H2.
+    apply IHp2 with x in H3.
+    destruct H3.
+    exists x0.
+    apply E_Seq with x.
+    assumption.
+    assumption.
+  }
+  {
+    intros.    
+    inversion H.
+    apply IHp1 with st in H2.
+    destruct H2.     
+    apply IHp2 with st in H4.
+    destruct H4.
+    assert (G := bool_true_or_false (beval st b)).
+    destruct G.
+    {
+      exists x.
+      apply E_IfTrue.
+      assumption.
+      assumption.
+    }
+    {
+      exists x0.
+      apply E_IfFalse.
+      assumption.
+      assumption.
+    }
+  }
+  {
+    intros.
+    inversion H.
+  }
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -1825,29 +1882,64 @@ Inductive sinstr : Type :=
     immaterial what we do, since our compiler will never emit such a
     malformed program. *)
 
-Fixpoint s_execute (st : state) (stack : list nat)
-                   (prog : list sinstr)
-                 : list nat
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Fixpoint s_execute (store : state) (stack : list nat)
+         (prog : list sinstr)
+  : list nat :=
+  match prog with
+  | SPush n :: prog' => s_execute store (n :: stack) prog'
+  | SLoad i :: prog' => s_execute store (store i :: stack) prog'
+  | SPlus :: prog' =>
+    match stack with
+    | x :: y :: stack' => s_execute store (x + y :: stack') prog'
+    | _ => [0]
+    end
+  | SMinus :: prog' =>
+    match stack with
+    | x :: y :: stack' => s_execute store (y - x :: stack') prog'
+    | _ => [0]
+    end
+  | SMult :: prog' =>
+    match stack with
+    | x :: y :: stack' => s_execute store (x * y :: stack') prog'
+    | _ => [0]
+    end
+  | [] => stack
+  end.
 
 Example s_execute1 :
      s_execute empty_state []
        [SPush 5; SPush 3; SPush 1; SMinus]
    = [2; 5].
-(* FILL IN HERE *) Admitted.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
 
 Example s_execute2 :
      s_execute (t_update empty_state X 3) [3;4]
        [SPush 4; SLoad X; SMult; SPlus]
    = [15; 4].
-(* FILL IN HERE *) Admitted.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
 
 (** Next, write a function that compiles an [aexp] into a stack
     machine program. The effect of running the program should be the
     same as pushing the value of the expression on the stack. *)
 
-Fixpoint s_compile (e : aexp) : list sinstr
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Print aexp.
+Print sinstr.
+
+Fixpoint s_compile (e : aexp) : list sinstr :=
+  match e with
+  | ANum n => [SPush n]
+  | AId i => [SLoad i]
+  | APlus x y => s_compile x ++ s_compile y ++ [SPlus]
+  | AMinus x y => s_compile x ++ s_compile y ++ [SMinus]
+  | AMult x y => s_compile x ++ s_compile y ++ [SMult]
+  end.
 
 (** After you've defined [s_compile], prove the following to test
     that it works. *)
@@ -1855,7 +1947,7 @@ Fixpoint s_compile (e : aexp) : list sinstr
 Example s_compile1 :
     s_compile (AMinus (AId X) (AMult (ANum 2) (AId Y)))
   = [SLoad X; SPush 2; SLoad Y; SMult; SMinus].
-(* FILL IN HERE *) Admitted.
+Proof. reflexivity. Qed.
 (** [] *)
 
 (** **** Exercise: 4 stars, advanced (stack_compiler_correct)  *)
@@ -1870,11 +1962,81 @@ Example s_compile1 :
     more general lemma to get a usable induction hypothesis; the main
     theorem will then be a simple corollary of this lemma. *)
 
+Lemma s_execute_distr :
+  forall (e : aexp) (state : state) (stack : list nat) (instr : list sinstr),
+    s_execute state stack (s_compile e ++ instr) =
+    s_execute state ((aeval state e) :: stack) instr.
+Proof.
+  induction e.
+  {
+    intros.
+    reflexivity.
+  }
+  {
+    intros.
+    reflexivity.
+  }
+  {
+    simpl.
+    intros.
+    rewrite <- 2? app_assoc.
+    rewrite  IHe1.
+    rewrite IHe2.
+    simpl.
+    rewrite plus_comm.
+    reflexivity.
+  }
+  {
+    intros.
+    simpl.
+    rewrite <- 2? app_assoc.
+    rewrite  IHe1.
+    rewrite IHe2.
+    reflexivity.
+  }
+  {
+    intros.
+    simpl.
+    rewrite <- 2? app_assoc.
+    rewrite  IHe1.
+    rewrite IHe2.
+    rewrite mult_comm.
+    reflexivity.
+  }
+Qed.
 
 Theorem s_compile_correct : forall (st : state) (e : aexp),
   s_execute st [] (s_compile e) = [ aeval st e ].
 Proof.
-  (* FILL IN HERE *) Admitted.
+  induction e.
+  {
+    reflexivity.
+  }
+  {
+    reflexivity.
+  }
+  {
+    simpl.
+    rewrite 2? s_execute_distr.
+    simpl.
+    rewrite plus_comm.
+    reflexivity.
+  }
+  {
+    simpl.
+    rewrite 2? s_execute_distr.
+    simpl.
+    reflexivity.
+  }
+  {
+    simpl.
+    rewrite 2? s_execute_distr.
+    simpl.
+    rewrite mult_comm.
+    reflexivity.
+  }
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 3 stars, optional (short_circuit)  *)
