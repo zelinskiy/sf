@@ -187,30 +187,34 @@ Definition test_ceval (st:state) (c:com) :=
   | Some st => Some (st X, st Y, st Z)
   end.
 
-(* Compute
+Compute
      (test_ceval empty_state
          (X ::= ANum 2;;
           IFB BLe (AId X) (ANum 1)
             THEN Y ::= ANum 3
             ELSE Z ::= ANum 4
           FI)).
-   ====>
-      Some (2, 0, 4)   *)
+(* ====>
+      Some (2, 0, 4)  *)
 
 (** **** Exercise: 2 stars, recommended (pup_to_n)  *)
 (** Write an Imp program that sums the numbers from [1] to
    [X] (inclusive: [1 + 2 + ... + X]) in the variable [Y].  Make sure
    your solution satisfies the test that follows. *)
 
-Definition pup_to_n : com
-  (* REPLACE THIS LINE WITH ":= _your_definition_ ." *). Admitted.
+Definition pup_to_n : com :=
+  Y ::= ANum 0;;
+  WHILE (BNot (BEq (AId X) (ANum 0))) DO
+    Y ::= APlus (AId Y) (AId X) ;;
+    X ::= AMinus (AId X) (ANum 1)
+  END.
 
-(* 
+
 Example pup_to_n_1 :
   test_ceval (t_update empty_state X 5) pup_to_n
   = Some (0, 15, 0).
 Proof. reflexivity. Qed.
-*)
+
 (** [] *)
 
 (** **** Exercise: 2 stars, optional (peven)  *)
@@ -218,7 +222,10 @@ Proof. reflexivity. Qed.
     sets [Z] to [1] otherwise.  Use [ceval_test] to test your
     program. *)
 
-(* FILL IN HERE *)
+Definition peven : com := Z ::= AId X;; WHILE (BLe (ANum 2) (AId Z)) DO Z ::= AMinus (AId Z) (ANum 2) END.
+
+Compute test_ceval (t_update empty_state X 11) peven.
+
 (** [] *)
 
 (* ################################################################# *)
@@ -349,7 +356,19 @@ Theorem ceval__ceval_step: forall c st st',
 Proof.
   intros c st st' Hce.
   induction Hce.
-  (* FILL IN HERE *) Admitted.
+  {
+    exists 1.
+    reflexivity.
+  }
+  {
+    exists 1.
+    simpl.
+    rewrite H.
+    reflexivity.
+  }
+Admitted.
+(* FILL IN HERE *)
+  
 (** [] *)
 
 Theorem ceval_and_ceval_step_coincide: forall c st st',
