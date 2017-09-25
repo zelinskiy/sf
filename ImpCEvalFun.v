@@ -366,8 +366,52 @@ Proof.
     rewrite H.
     reflexivity.
   }
-Admitted.
-(* FILL IN HERE *)
+  {    
+    destruct IHHce1.
+    destruct IHHce2.
+    exists (S x + x0).
+    simpl.
+    apply (ceval_step_more) with (i2 := x + x0) in H.
+    apply (ceval_step_more) with (i2 := x + x0) in H0.
+    rewrite H.
+    apply H0.
+    { apply le_plus_r. }
+    { apply le_plus_l. }
+  }
+  {
+    destruct IHHce.
+    exists (S x).
+    simpl.
+    rewrite H.
+    assumption.
+  }
+  {
+    destruct IHHce.
+    exists (S x).
+    simpl.
+    rewrite H.
+    assumption.
+  }
+  {
+    exists 1.
+    simpl.
+    rewrite H.
+    reflexivity.
+  }
+  {
+    destruct IHHce1.
+    destruct IHHce2.
+    exists (S x + x0).
+    simpl.
+    apply (ceval_step_more) with (i2 := x + x0) in H0.
+    apply (ceval_step_more) with (i2 := x + x0) in H1.
+    rewrite H.
+    rewrite H0.
+    apply H1.
+    { apply le_plus_r. }
+    { apply le_plus_l. }
+  }
+Qed.
   
 (** [] *)
 

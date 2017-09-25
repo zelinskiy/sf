@@ -129,7 +129,20 @@ Theorem skip_right: forall c,
     (c ;; SKIP)
     c.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  - intro.
+    inversion H.
+    subst.
+    inversion H5.
+    subst.
+    assumption.
+  - intro.
+    apply E_Seq with st'.
+    * assumption.
+    * apply E_Skip.
+Qed.
+  
 (** [] *)
 
 (** Similarly, here is a simple transformation that optimizes [IFB]
@@ -216,7 +229,21 @@ Theorem IFB_false: forall b c1 c2,
     (IFB b THEN c1 ELSE c2 FI)
     c2.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros H0.
+  - unfold bequiv in H.
+    simpl in H.
+    inversion H0.
+    * rewrite H in H6.
+      inversion H6.
+    * assumption.
+  - apply E_IfFalse.
+    * unfold bequiv in H.
+      simpl in H.
+      apply H.
+    * assumption.
+Qed.
+    
 (** [] *)
 
 (** **** Exercise: 3 stars (swap_if_branches)  *)
@@ -228,7 +255,46 @@ Theorem swap_if_branches: forall b e1 e2,
     (IFB b THEN e1 ELSE e2 FI)
     (IFB BNot b THEN e2 ELSE e1 FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intros H.
+  {
+    inversion H; subst.
+    {
+      apply E_IfFalse.
+      {
+        simpl.
+        rewrite H5.
+        reflexivity.
+      }
+      {
+        assumption.
+      }
+    }
+    {
+      apply E_IfTrue.
+      {
+        simpl.
+        rewrite H5.
+        reflexivity.
+      }
+      {
+        assumption.
+      }
+    }
+  }
+  {
+    inversion H; subst;simpl in H5.
+    {
+      rewrite negb_true_iff in H5.
+      apply E_IfFalse; assumption.
+    }
+    {
+      rewrite negb_false_iff in H5.
+      apply E_IfTrue; assumption.
+    }
+  }
+Qed.
+  
 (** [] *)
 
 (** For [WHILE] loops, we can give a similar pair of theorems.  A loop
@@ -325,7 +391,41 @@ Theorem WHILE_true: forall b c,
     (WHILE b DO c END)
     (WHILE BTrue DO SKIP END).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split.
+  {
+    intro.
+    remember (WHILE b DO c END).
+    induction H0;inversion Heqc0; subst; clear Heqc0.
+    {
+      unfold bequiv in H.
+      rewrite H in H0.
+      inversion H0.
+    }
+    {
+      apply E_WhileLoop with st'.
+      { reflexivity. }
+      {
+        assert (G := WHILE_true_nonterm b c st' st'' H H0_0).
+        exfalso.
+        assumption.
+      }
+      {
+        apply IHceval2.
+        reflexivity.
+      }
+    }
+  }
+  {
+    intros.
+    assert (bequiv BTrue BTrue).
+    { easy. }
+    assert (G := WHILE_true_nonterm BTrue SKIP st st' H1 H0).
+    exfalso.
+    assumption.
+  }
+Qed.
+
 (** [] *)
 
 (** A more interesting fact about [WHILE] commands is that any finite
@@ -360,7 +460,30 @@ Proof.
 Theorem seq_assoc : forall c1 c2 c3,
   cequiv ((c1;;c2);;c3) (c1;;(c2;;c3)).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intro.
+  {
+    inversion H.
+    subst.
+    inversion H2.
+    subst.
+    apply E_Seq with st'1. assumption.
+    apply E_Seq with st'0. assumption.
+    assumption.
+  }
+  {
+    inversion H.
+    subst.
+    inversion H5.
+    subst.
+    apply E_Seq with st'1.
+    apply E_Seq with st'0.
+    assumption.
+    assumption.
+    assumption.
+  }
+Qed.
+  
 (** [] *)
 
 (** Proving program properties involving assignments is one place
