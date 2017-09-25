@@ -467,20 +467,16 @@ Proof.
     subst.
     inversion H2.
     subst.
-    apply E_Seq with st'1. assumption.
-    apply E_Seq with st'0. assumption.
-    assumption.
+    apply E_Seq with st'1; try assumption.
+    apply E_Seq with st'0; assumption.
   }
   {
     inversion H.
     subst.
     inversion H5.
     subst.
-    apply E_Seq with st'1.
-    apply E_Seq with st'0.
-    assumption.
-    assumption.
-    assumption.
+    apply E_Seq with st'1; try assumption.
+    apply E_Seq with st'0; assumption.
   }
 Qed.
   
@@ -513,7 +509,28 @@ Theorem assign_aequiv : forall X e,
   aequiv (AId X) e ->
   cequiv SKIP (X ::= e).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split; intro.
+  {
+    inversion H0; subst.
+    replace st' with (t_update st' X (st' X)) at 2.   
+    * apply E_Ass.
+      unfold aequiv in H.
+      rewrite <- H.
+      reflexivity.
+    * rewrite t_update_same.
+      reflexivity.      
+  }
+  {
+    inversion H0; subst.
+    unfold aequiv in H.
+    rewrite <- H.
+    simpl.
+    rewrite t_update_same.
+    constructor.
+  }
+Qed.
+  
 (** [] *)
 
 (** **** Exercise: 2 stars (equiv_classes)  *)
@@ -775,7 +792,32 @@ Theorem CSeq_congruence : forall c1 c1' c2 c2',
   cequiv c1 c1' -> cequiv c2 c2' ->
   cequiv (c1;;c2) (c1';;c2').
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split;intro.
+  {
+    inversion H1.
+    subst.
+    apply E_Seq with st'0.
+    - unfold cequiv in H.
+      rewrite <- H.
+      assumption.
+    - unfold cequiv in H0.
+      rewrite <- H0.
+      assumption.
+  }
+  {
+    inversion H1.
+    subst.
+    apply E_Seq with st'0.
+    - unfold cequiv in H.
+      rewrite H.
+      assumption.
+    - unfold cequiv in H0.
+      rewrite H0.
+      assumption.
+  }
+Qed.
+      
 (** [] *)
 
 (** **** Exercise: 3 stars (CIf_congruence)  *)
@@ -784,7 +826,44 @@ Theorem CIf_congruence : forall b b' c1 c1' c2 c2',
   cequiv (IFB b THEN c1 ELSE c2 FI)
          (IFB b' THEN c1' ELSE c2' FI).
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  split;intro.
+  {
+    inversion H2;subst.
+    - apply E_IfTrue.
+      * unfold bequiv in H.
+        rewrite <- H.
+        assumption.
+      * unfold cequiv in H0.
+        rewrite <- H0.
+        assumption.
+    - apply E_IfFalse.
+      * unfold bequiv in H.
+        rewrite <- H.
+        assumption.
+      * unfold cequiv in H1.
+        rewrite <- H1.
+        assumption.
+  }
+  {
+    inversion H2;subst.
+    - apply E_IfTrue.
+      * unfold bequiv in H.
+        rewrite H.
+        assumption.
+      * unfold cequiv in H0.
+        rewrite H0.
+        assumption.
+    - apply E_IfFalse.
+      * unfold bequiv in H.
+        rewrite H.
+        assumption.
+      * unfold cequiv in H1.
+        rewrite H1.
+        assumption.
+  }
+Qed.
+  
 (** [] *)
 
 (** For example, here are two equivalent programs and a proof of their
@@ -1160,7 +1239,17 @@ Proof.
        become constants after folding *)
       simpl. destruct (beq_nat n n0); reflexivity.
   - (* BLe *)
-    (* FILL IN HERE *) admit.
+    rename a into a1. rename a0 into a2. simpl.
+
+    remember (fold_constants_aexp a1) as a1' eqn:Heqa1'.
+    remember (fold_constants_aexp a2) as a2' eqn:Heqa2'.
+    replace (aeval st a1) with (aeval st a1') by
+       (subst a1'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- fold_constants_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+    
+    simpl. destruct (n <=? n0); reflexivity.
   - (* BNot *)
     simpl. remember (fold_constants_bexp b) as b' eqn:Heqb'.
     rewrite IHb.
@@ -1171,7 +1260,8 @@ Proof.
     remember (fold_constants_bexp b2) as b2' eqn:Heqb2'.
     rewrite IHb1. rewrite IHb2.
     destruct b1'; destruct b2'; reflexivity.
-(* FILL IN HERE *) Admitted.
+Qed.
+
 (** [] *)
 
 (** **** Exercise: 3 stars (fold_constants_com_sound)  *)
@@ -1201,7 +1291,20 @@ Proof.
       apply trans_cequiv with c2; try assumption.
       apply IFB_false; assumption.
   - (* WHILE *)
-    (* FILL IN HERE *) Admitted.
+    assert (bequiv b (fold_constants_bexp b)). {
+      apply fold_constants_bexp_sound. }
+    destruct (fold_constants_bexp b) eqn:Heqb;
+      try (apply CWhile_congruence; assumption).
+    + (* b always true *)
+      apply trans_cequiv with (WHILE BTrue DO SKIP END); try assumption.
+      apply WHILE_true;assumption.
+      easy.
+    + (* b always false *)
+      apply trans_cequiv with SKIP; try assumption.
+      apply WHILE_false;assumption.
+      easy.
+Qed.
+
 (** [] *)
 
 (* ----------------------------------------------------------------- *)
@@ -1233,11 +1336,138 @@ Proof.
      optimize_0plus_aexp
      optimize_0plus_bexp
      optimize_0plus_com
+ *)
 
+ Fixpoint optimize_0plus_aexp (e:aexp) : aexp :=
+   match e with
+   | ANum n =>
+     ANum n
+   | AId x =>
+     AId x
+   | APlus (ANum 0) e2 =>
+     optimize_0plus_aexp e2
+   | APlus e1 e2 =>
+     APlus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+   | AMinus e1 e2 =>
+     AMinus (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+   | AMult e1 e2 =>
+     AMult (optimize_0plus_aexp e1) (optimize_0plus_aexp e2)
+   end.
+
+ Fixpoint optimize_0plus_bexp (b : bexp) : bexp :=
+  match b with
+  | BTrue => BTrue
+  | BFalse => BFalse
+  | BEq a1 a2 =>
+    BEq (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+  | BLe a1 a2 =>
+    BLe (optimize_0plus_aexp a1) (optimize_0plus_aexp a2)
+  | BNot b1 =>
+    BNot (optimize_0plus_bexp b1)
+  | BAnd b1 b2 =>
+    BAnd (optimize_0plus_bexp b1) (optimize_0plus_bexp b2)
+  end.
+
+ Fixpoint optimize_0plus_com (c : com) : com :=
+  match c with
+  | SKIP => SKIP
+  | x ::= a => (x ::= optimize_0plus_aexp a)
+  | c1 ;; c2 =>
+    optimize_0plus_com c1 ;; optimize_0plus_com c2                       
+  | IFB b THEN c1 ELSE c2 FI =>
+    IFB optimize_0plus_bexp b
+        THEN optimize_0plus_com c1
+        ELSE optimize_0plus_com c2 FI
+  | WHILE b DO c END =>
+    WHILE optimize_0plus_bexp b DO optimize_0plus_com c END
+  end.
+ 
+(*
    Prove that these three functions are sound, as we did for
    [fold_constants_*].  Make sure you use the congruence lemmas in
    the proof of [optimize_0plus_com] -- otherwise it will be _long_!
+ *)
 
+Theorem optimize_0plus_aexp_sound :
+  atrans_sound optimize_0plus_aexp.
+Proof.
+  unfold atrans_sound.
+  intros.
+  unfold aequiv.
+  intros.
+  induction a;
+    simpl;
+    try reflexivity;
+    try (destruct (optimize_0plus_aexp a1);
+         destruct (optimize_0plus_aexp a2);
+         rewrite IHa1;
+         rewrite IHa2;
+         reflexivity).
+  - destruct a1;
+      try (destruct n);
+      simpl in IHa1;
+      simpl;
+      rewrite IHa2;      
+      try (rewrite IHa1);
+      try (rewrite <- IHa1);
+      try reflexivity.
+Qed.
+
+Theorem optimize_0plus_bexp_sound :
+  btrans_sound optimize_0plus_bexp.
+Proof.
+  unfold btrans_sound.
+  intros b.
+  unfold bequiv.
+  intros st.
+  induction b;
+    try reflexivity.
+  - rename a into a1. rename a0 into a2. simpl.
+    remember (optimize_0plus_aexp a1) as a1' eqn:Heqa1'.
+    remember (optimize_0plus_aexp a2) as a2' eqn:Heqa2'.    
+    replace (aeval st a1) with (aeval st a1') by
+      (subst a1'; rewrite <- optimize_0plus_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- optimize_0plus_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+  - rename a into a1. rename a0 into a2. simpl.
+    remember (optimize_0plus_aexp a1) as a1' eqn:Heqa1'.
+    remember (optimize_0plus_aexp a2) as a2' eqn:Heqa2'.    
+    replace (aeval st a1) with (aeval st a1') by
+      (subst a1'; rewrite <- optimize_0plus_aexp_sound; reflexivity).
+    replace (aeval st a2) with (aeval st a2') by
+       (subst a2'; rewrite <- optimize_0plus_aexp_sound; reflexivity).
+    destruct a1'; destruct a2'; try reflexivity.
+  - simpl. remember (optimize_0plus_bexp b) as b' eqn:Heqb'.
+    rewrite IHb.
+    destruct b'; reflexivity.
+  - simpl.
+    remember (optimize_0plus_bexp b1) as b1' eqn:Heqb1'.
+    remember (optimize_0plus_bexp b2) as b2' eqn:Heqb2'.
+    rewrite IHb1. rewrite IHb2.
+    destruct b1'; destruct b2'; reflexivity.
+Qed.
+
+Theorem optimize_0plus_com_sound :
+  ctrans_sound optimize_0plus_com.
+Proof.
+  unfold ctrans_sound. intros c.
+  induction c; simpl.
+  - apply refl_cequiv.
+  - apply CAss_congruence.
+    apply optimize_0plus_aexp_sound.
+  - apply CSeq_congruence; assumption.
+  - assert (bequiv b (optimize_0plus_bexp b)).
+    { apply optimize_0plus_bexp_sound. }
+    destruct (optimize_0plus_bexp b) eqn:Heqb;
+      try (apply CIf_congruence; assumption).
+  - assert (bequiv b (optimize_0plus_bexp b)).
+    { apply optimize_0plus_bexp_sound. }
+    destruct (optimize_0plus_bexp b) eqn:Heqb;
+      try (apply CWhile_congruence; assumption).
+Qed.
+  
+ (*
    Then define an optimizer on commands that first folds
    constants (using [fold_constants_com]) and then eliminates [0 + n]
    terms (using [optimize_0plus_com]).
@@ -1247,7 +1477,19 @@ Proof.
    - Prove that the optimizer is sound.  (This part should be _very_
      easy.)  *)
 
-(* FILL IN HERE *)
+Definition optimize_fold_then_0plus c :=
+  fold_constants_com (optimize_0plus_com c).
+
+Theorem optimize_fold_then_0plus_sound :
+  ctrans_sound optimize_fold_then_0plus.
+Proof.
+  intros.
+  intro.
+  assert (G1 := optimize_0plus_com_sound c).
+  assert (G2 := fold_constants_com_sound (optimize_0plus_com c)).
+  apply trans_cequiv with (optimize_0plus_com c);assumption.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
