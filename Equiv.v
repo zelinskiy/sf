@@ -1651,11 +1651,43 @@ Lemma aeval_weakening : forall i st a ni,
   var_not_used_in_aexp i a ->
   aeval (t_update st i ni) a = aeval st a.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  intros.
+  induction H; try reflexivity.
+  - simpl.
+    rewrite t_update_neq.
+    * reflexivity.
+    * assumption.
+  - simpl.
+    rewrite IHvar_not_used_in_aexp1.
+    rewrite IHvar_not_used_in_aexp2.
+    reflexivity.
+  - simpl.
+    rewrite IHvar_not_used_in_aexp1.
+    rewrite IHvar_not_used_in_aexp2.
+    reflexivity.
+  - simpl.
+    rewrite IHvar_not_used_in_aexp1.
+    rewrite IHvar_not_used_in_aexp2.
+    reflexivity.
+Qed.
 
 (** Using [var_not_used_in_aexp], formalize and prove a correct verson
     of [subst_equiv_property]. *)
 
+Theorem subst_equiv:
+  forall i1 i2 a1 a2,
+    var_not_used_in_aexp i1 a1 ->
+  cequiv (i1 ::= a1;; i2 ::= a2)
+         (i1 ::= a1;; i2 ::= subst_aexp i1 a1 a2).
+Proof.
+  intros.
+  unfold cequiv.
+  intros.
+  split;intro.
+  - admit.
+  - admit.
+Admitted.
+      
 (* FILL IN HERE *)
 (** [] *)
 
@@ -1665,7 +1697,15 @@ Proof.
 Theorem inequiv_exercise:
   ~ cequiv (WHILE BTrue DO SKIP END) SKIP.
 Proof.
-  (* FILL IN HERE *) Admitted.
+  unfold cequiv.
+  intro C.
+  assert (H1: SKIP / empty_state \\ empty_state).
+  { constructor. }
+  assert (H2 := loop_never_stops empty_state empty_state).
+  rewrite <- C in H1.
+  absurd (loop / empty_state \\ empty_state);assumption.
+Qed.
+
 (** [] *)
 
 (* ################################################################# *)
