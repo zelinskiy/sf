@@ -467,7 +467,18 @@ Proof.
    ...into formal statements (use the names [assn_sub_ex1] 
    and [assn_sub_ex2]) and use [hoare_asgn] to prove them. *)
 
-(* FILL IN HERE *)
+Example assn_sub_ex1:
+  {{ (fun st => st X <= 5) [X |-> APlus (AId X) (ANum 1)] }}
+  (X ::= APlus (AId X) (ANum 1))
+  {{ fun st => st X <= 5 }}.
+Proof. apply hoare_asgn. Qed.
+
+Example assn_sub_ex2:
+  {{ (fun st => 0 <= st X /\ st X <= 5) [X |-> (ANum 3)] }}
+  (X ::= (ANum 3))
+  {{ fun st => 0 <= st X /\ st X <= 5 }}.
+Proof. apply hoare_asgn. Qed.
+
 (** [] *)
 
 (** **** Exercise: 2 stars, recommendedM (hoare_asgn_wrong)  *)
@@ -484,6 +495,29 @@ Proof.
     The rule universally quantifies over the arithmetic expression 
     [a], and your counterexample needs to exhibit an [a] for which 
     the rule doesn't work.) *)
+
+Theorem hoare_asgn_wrong:
+  exists a,
+    ~({{ fun st => True }}
+    (X ::= a)
+    {{ fun st => st X = aeval st a }}).
+Proof.
+  unfold hoare_triple.
+  exists (AId Y).
+  intro.
+  remember (t_update empty_state Y 0) as st0.
+  remember (t_update st0 X (aeval st0 (AId Y))) as st1.
+  assert (H := H st0 st1).
+  simpl in H.
+  assert ((X ::= AId Y) / st0 \\ st1) as G.
+  {
+    rewrite Heqst1.
+    constructor.
+    reflexivity.
+  }
+  apply H in G.
+  simpl.
+Admitted.
 
 (* FILL IN HERE *)
 (** [] *)
